@@ -51,7 +51,7 @@ class LoginWindow(LoginFunctions):
         login_button = tk.Button(self.root, command=lambda: [], text='Login', font=body_font, width=12)
         login_button.pack(padx=5, pady=5)
 
-        create_account_button = tk.Button(self.root, command=lambda: [], text='Create Account', font=body_font, width=12)
+        create_account_button = tk.Button(self.root, command=lambda: [self.create_account], text='Create Account', font=body_font, width=12)
         create_account_button.pack(padx=5, pady=5)
 
         self.exit(self.root)
