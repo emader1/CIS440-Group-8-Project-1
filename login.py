@@ -13,8 +13,13 @@ class LoginFunctions(Functions):
         self.user = user
 
     # Allows users to login.
-    def login(self):
-        print("Add Code Here.")
+    def login(self, email, password, root):
+        data = self.load_json_data('users.json')
+
+        if email in data and data[email]["password"] == password:
+            self.feedback_label.config(text='Login Successful!')
+        else:
+            self.feedback_label.config(text='Invalid Email or Password.')
 
     #Allows new users to open the create new account window.
     def create_account(self):
@@ -48,7 +53,9 @@ class LoginWindow(LoginFunctions):
         password_entry = tk.Entry(frame, show='*', textvariable=password_var)
         password_entry.pack()
 
-        login_button = tk.Button(self.root, command=lambda: [], text='Login', font=body_font, width=12)
+        self.feedback_label.pack()
+
+        login_button = tk.Button(self.root, command=lambda: [self.login(email_var.get(), password_var.get(), self.root)], text='Login', font=body_font, width=12)
         login_button.pack(padx=5, pady=5)
 
         create_account_button = tk.Button(self.root, command=lambda: [self.create_account], text='Create Account', font=body_font, width=12)
