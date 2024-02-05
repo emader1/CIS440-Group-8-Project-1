@@ -1,12 +1,29 @@
 import tkinter as tk
 import tkinter.ttk
 
+from functions import Functions
+
 title_font = ("Arial", 16)
 body_font = ("Arial", 12)
 
-class LoginWindow():
-    def __init__(self, root):
+class LoginFunctions(Functions):
+    def __init__(self, root, user):
+        super().__init__(root, user)
         self.root = root
+        self.user = user
+
+    # Allows users to login.
+    def login(self):
+        print("Add Code Here.")
+
+    #Allows new users to open the create new account window.
+    def create_account(self):
+        print("Add Code Here.")
+
+class LoginWindow(LoginFunctions):
+    def __init__(self, root, user):
+        super().__init__(root, user)
+
         self.root.title("Login Page")
         self.root.geometry('800x600')
         self.root.config(background='silver')
@@ -36,11 +53,13 @@ class LoginWindow():
 
         create_account_button = tk.Button(self.root, command=lambda: [], text='Create Account', font=body_font, width=12)
         create_account_button.pack(padx=5, pady=5)
+
+        self.exit(self.root)
         
 
 def main():
     root = tk.Tk()
-    app = LoginWindow(root)
+    app = LoginWindow(root, user=None)
     LoginWindow.load_main(app)
     root.mainloop()
 
