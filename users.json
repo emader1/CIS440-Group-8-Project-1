@@ -1,5 +1,14 @@
 {
-    "emader@asu.edu": {
-        "password": "ABC123"
-    }
+  "emader@asu.edu": {
+    "password": "ABC123"
+  },
+  "test@testing.com": {
+    "Password": "123qaz"
+  },
+  "test@test.com": {
+    "Password": "123qaz"
+  },
+  "123@123.com": {
+    "Password": "123123"
+  }
 }
