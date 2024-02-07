@@ -90,7 +90,7 @@ class LoginWindow(ParentWindow):
     def login(self, email, password):
         data = self.load_json_data('users.json')
 
-        if email in data and data[email]["Password"] == password:
+        if email in data and data[email]["password"] == password:
             self.feedback_label.config(text='Login Successful!')
         else:
             self.feedback_label.config(text='Invalid Email or Password.')
