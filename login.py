@@ -1,5 +1,6 @@
 import tkinter as tk
 import json
+from home_page import HomePage
 
 title_font = ("Arial", 16)
 body_font = ("Arial", 12)
@@ -90,13 +91,17 @@ class LoginWindow(ParentWindow):
     def login(self, email, password):
         data = self.load_json_data('users.json')
 
-        if email in data and data[email]["password"] == password:
+        if email in data and data[email]["Password"] == password:
             self.feedback_label.config(text='Login Successful!')
+            # If login successful, create and display the home page
+            self.frame.pack_forget()  # Hide the login interface
+            home_page = HomePage(self.root)  # Instantiate the home page
+            home_page.frame.pack()  # Display the home page
         else:
             self.feedback_label.config(text='Invalid Email or Password.')
 
     # Allows users to create accounts.
-    def create_account(self, email, password):
+    def create_account(self, email, password, full_name, hours_studied_per_week, city):
         data = self.load_json_data('users.json')
         if email in data:
             self.feedback_label.config(text='Email is already linked to an account.')
@@ -105,8 +110,12 @@ class LoginWindow(ParentWindow):
                 allowed_characters = set("!@#$%^&*()-_=+[]{}|;:'\",.<>/?`~")
                 if len(password) >= 6:
                     if all(char.isalnum() or char in allowed_characters for char in password):
-                        data[email] = {}
-                        data[email]['Password'] = password
+                        data[email] = {
+                            "Password": password,
+                            "Full Name": full_name,
+                            "Hours Studied Per Week": hours_studied_per_week,
+                            "City": city
+                        }
 
                         self.save_json_data('users.json', data)
 
@@ -121,45 +130,7 @@ class LoginWindow(ParentWindow):
                 self.feedback_label.config(text='Invalid Email Address.')
     
     def account_window(self):
-        self.frame.pack_forget()
-
-        self.frame2 = tk.Frame(self.root, background="silver")
-
-        label_frame = tk.Frame(self.frame2, borderwidth=2, relief='sunken')
-        label_frame.pack(padx=5, pady=5, ipadx=10, ipady=10)
-
-        login_label = tk.Label(label_frame, text='Create Account', font=title_font)
-        login_label.pack()
-
-        # User's email and password input label.
-        email_label = tk.Label(label_frame, text='Email:', font=body_font)
-        email_label.pack(padx=5, pady=5)
-        email_var = tk.StringVar()
-        email_entry = tk.Entry(label_frame, textvariable=email_var)
-        email_entry.pack()
-
-        # User's password label. All inputs show in '*'.
-        password_label = tk.Label(label_frame, text='Password:', font=body_font)
-        password_label.pack(padx=5, pady=5)
-        password_var = tk.StringVar()
-        password_entry = tk.Entry(label_frame, show='*', textvariable=password_var)
-        password_entry.pack()
-
-        # This label provides feedback to the user across the entire app.
-        self.feedback_label.pack()
-
-        button_frame = tk.Frame(self.frame2, background="silver")
-        button_frame.pack(padx=5, pady=5, ipadx=10, ipady=10)
-
-        create_account_button = tk.Button(button_frame, command=lambda: [self.create_account(email_var.get(), password_var.get())], text='Create Account', font=body_font, width=12)
-        create_account_button.pack(padx=5, pady=5)
-
-        login_window_button = tk.Button(button_frame, command=lambda: [self.frame.pack(), self.frame2.pack_forget()], text='Previous', font=body_font, width=12)
-        login_window_button.pack(padx=5, pady=5)
-
-        self.exit_button(button_frame, self.root)
-
-        self.frame2.pack()
+        self.frame.pack
 
 def main():
     master = tk.Tk()
