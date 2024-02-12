@@ -1,5 +1,6 @@
 import tkinter as tk
 
+
 class HomePage:
     def __init__(self, root):
         self.root = root
