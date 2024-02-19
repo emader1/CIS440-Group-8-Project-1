@@ -1,5 +1,5 @@
 import tkinter as tk
-
+import mysql.connector
 
 class HomePage:
     def __init__(self, root, db_connection, cursor):
