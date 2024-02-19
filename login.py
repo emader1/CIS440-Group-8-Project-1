@@ -138,7 +138,6 @@ class LoginWindow(ParentWindow):
 
         # Pack the frame2 to display it
         self.frame2.pack()
-
     def login(self):
         query = "SELECT * FROM users WHERE email = %s AND password = %s"
         self.cursor.execute(query, (self.email_var.get(), self.password_var.get()))
@@ -147,10 +146,11 @@ class LoginWindow(ParentWindow):
         if user:
             self.feedback_label.config(text='Login Successful!')
             self.frame.pack_forget()
-            home_page = HomePage(self.root)
+            home_page = HomePage(self.root, self.db_connection, self.cursor)  # Pass db_connection and cursor here
             home_page.frame.pack()
         else:
             self.feedback_label.config(text='Invalid Email or Password.')
+
 
     def create_account(self, email, password, fname, lname, username):
         query = "SELECT * FROM users WHERE email = %s"

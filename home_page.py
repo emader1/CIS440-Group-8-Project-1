@@ -2,8 +2,10 @@ import tkinter as tk
 
 
 class HomePage:
-    def __init__(self, root):
+    def __init__(self, root, db_connection, cursor):
         self.root = root
+        self.db_connection = db_connection
+        self.cursor = cursor
 
         self.frame = tk.Frame(self.root, background="silver")
         self.frame.pack()
@@ -32,14 +34,34 @@ class HomePage:
         interests = self.interests_entry.get()
         reminder_time = self.reminder_entry.get()
 
-        # Add functionality to save study reminders here
-        print("Academic Interests:", interests)
-        print("Study Reminder Time:", reminder_time)
+        # Write SQL query to insert study reminders
+        query = "INSERT INTO study_sessions (interests, reminder_time) VALUES (%s, %s)"
+        data = (interests, reminder_time)
+
+        # Execute the query
+        self.cursor.execute(query, data)
+        self.db_connection.commit()
+
+        print("Study reminders saved successfully.")
 
 def main():
+    # Establish connection to MySQL server
+    db_connection = mysql.connector.connect(
+        host="107.180.1.16",
+        port="3306",
+        user="spring2024Cteam8",
+        password="spring2024Cteam8",
+        database="spring2024Cteam8"
+    )
+    cursor = db_connection.cursor()
+
     master = tk.Tk()
-    app = HomePage(master)
+    app = HomePage(master, db_connection, cursor)
     master.mainloop()
+
+    # Close the database connection when done
+    cursor.close()
+    db_connection.close()
 
 if __name__ == "__main__":
     main()
