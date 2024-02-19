@@ -29,6 +29,10 @@ class HomePage:
         self.save_reminders_button = tk.Button(self.frame, text="Save Study Reminders", command=self.save_reminders)
         self.save_reminders_button.pack(pady=10)
 
+        # Calendar widget to display upcoming study sessions/events
+        self.calendar = Calendar(self.frame, selectmode='day', date_pattern='yyyy-mm-dd')
+        self.calendar.pack(pady=10)
+
     def save_reminders(self):
         # Get the values entered by the user
         interests = self.interests_entry.get()
