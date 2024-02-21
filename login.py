@@ -141,7 +141,7 @@ class LoginWindow(ParentWindow):
 
         if user:
             self.feedback_label.config(text='Login Successful!')
-            self.frame.pack_forget()
+            self.login_frame.pack_forget()
             home_page = HomePage(self.root, self.db_connection, self.cursor)
             home_page.frame.pack()
         else:
