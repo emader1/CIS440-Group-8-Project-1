@@ -3,9 +3,10 @@ import tkinter.ttk
 import mysql.connector
 from home_page import HomePage
 
-title_font = ("Arial", 16)
-body_font = ("Arial", 12)
+title_font = ("Helvetica", 16)
+body_font = ("Helvetica", 12)
 
+# Class that configures the main window of the app. All windows are placed inside this window.
 class ParentWindow():
     def __init__(self, root):
         self.root = root
@@ -13,13 +14,16 @@ class ParentWindow():
         self.root.config(background="silver")
         self.feedback_label = tk.Label(root, background='silver')
 
+    # Loads in the login window.
     def load_main(self):
         login_window = LoginWindow(self.root)
         login_window.load_main()
 
+    # Closes the app.
     def exit_app(self, root):
         root.destroy()
 
+    # Button to close the app.
     def exit_button(self, frame, root):
         exit_button = tk.Button(frame, command=lambda: self.exit_app(root), text='Exit', font=body_font, width=12)
         exit_button.pack(padx=5, pady=5)
@@ -77,6 +81,22 @@ class LoginWindow(ParentWindow):
 
         self.login_frame.pack()
 
+    # Uses the mySQL database to validate user's credentials.
+    def login(self):
+        query = "SELECT * FROM users WHERE email = %s AND password = %s"
+        self.cursor.execute(query, (self.email_var.get(), self.password_var.get()))
+        user = self.cursor.fetchone()
+
+        if user:
+            self.feedback_label.config(text='Login Successful!')
+            self.login_frame.pack_forget()
+            self.feedback_label.pack_forget()
+            home_page = HomePage(self.root, self.db_connection, self.cursor)
+            home_page.load_main()
+        else:
+            self.feedback_label.config(text='Invalid Email or Password.')
+
+    # Window allowing users to create a new account.
     def account_window(self):
         self.account_frame = tk.Frame(self.root, background="silver")
 
@@ -100,7 +120,7 @@ class LoginWindow(ParentWindow):
         lname_entry = tk.Entry(label_frame, textvariable=lname_var)
         lname_entry.pack()
 
-        # User's email and password input label.
+        # User's email label.
         email_label = tk.Label(label_frame, text='Email:', font=body_font)
         email_label.pack(padx=5, pady=5)
         email_var = tk.StringVar()
@@ -124,7 +144,7 @@ class LoginWindow(ParentWindow):
         button_frame = tk.Frame(self.account_frame, background="silver")
         button_frame.pack(padx=5, pady=5, ipadx=10, ipady=10)
 
-        create_account_button = tk.Button(button_frame, command=lambda: self.create_account(email_var.get(), password_var.get(), fname_var.get(), lname_var.get(), username_var.get()), text='Create Account', font=body_font, width=12)
+        create_account_button = tk.Button(button_frame, command=lambda: [self.create_account(email_var.get(), password_var.get(), fname_var.get(), lname_var.get(), username_var.get())], text='Create Account', font=body_font, width=12)
         create_account_button.pack(padx=5, pady=5)
 
         login_window_button = tk.Button(button_frame, command=lambda: [self.login_frame.pack(), self.account_frame.pack_forget(), self.feedback_label.pack_forget()], text='Previous', font=body_font, width=12)
@@ -134,20 +154,7 @@ class LoginWindow(ParentWindow):
 
         self.account_frame.pack()
 
-    def login(self):
-        query = "SELECT * FROM users WHERE email = %s AND password = %s"
-        self.cursor.execute(query, (self.email_var.get(), self.password_var.get()))
-        user = self.cursor.fetchone()
-
-        if user:
-            self.feedback_label.config(text='Login Successful!')
-            self.login_frame.pack_forget()
-            home_page = HomePage(self.root, self.db_connection, self.cursor)
-            home_page.frame.pack()
-        else:
-            self.feedback_label.config(text='Invalid Email or Password.')
-
-
+    # Uses mySQL database to create new accounts.
     def create_account(self, email, password, fname, lname, username):
         try:
             query = "SELECT * FROM users WHERE email = %s"
@@ -180,6 +187,7 @@ class LoginWindow(ParentWindow):
             self.feedback_label.config(text='An unexpected error occurred. Please try again later.')
             print(f"Unexpected Error: {e}")
 
+    # Window that allows users to enter preferences. Preferences include study times and classes.
     def preference_window(self):
         def add_class():
             selected_item = class_combobox.get()
@@ -191,47 +199,72 @@ class LoginWindow(ParentWindow):
             if selected_index:
                 class_listbox.delete(selected_index)
 
-        self.slider_frame = tk.Frame(self.root, borderwidth=2, relief='sunken')
-        self.preference_frame = tk.Frame(self.root, borderwidth=2, relief='sunken')
+        # Frame that controls the entire window.
+        self.preference_frame = tk.Frame(self.root, background='silver')
+        self.preference_frame.pack()
 
-        slider_var = tk.IntVar()
-        slider = tk.Scale(self.slider_frame, from_=1, to=12, orient='horizontal', length=160, variable=slider_var)
-        slider.pack(side=tk.LEFT, padx=5, pady=5)
+        # Frame that places the weekly calendar.
+        self.calendar_frame = tk.Frame(self.preference_frame, background='silver')
+        self.calendar_frame.pack(padx=5, pady=5)
 
-        am_pm_var = tk.IntVar()
-        am_radio = tk.Radiobutton(self.slider_frame, text='AM', value=0, variable=am_pm_var)
-        pm_radio = tk.Radiobutton(self.slider_frame, text='PM', value=1, variable=am_pm_var)
+        # Function that creates a weekly calendar.
+        self.create_calendar()
 
-        am_radio.pack(side=tk.LEFT)
-        pm_radio.pack(side=tk.LEFT)
+        # Frame for the listbox entry.
+        listbox_frame = tk.Frame(self.preference_frame, borderwidth=2, relief='sunken')
+        listbox_frame.pack(padx=5, pady=5, ipadx=10, ipady=10)
 
-        add_button = tk.Button(self.slider_frame, text='Add', command=lambda: [self.button_click(slider_var.get(), am_pm_var.get())])
-        add_button.pack(side=tk.LEFT, padx=5, pady=5)
+        # Frame for the combobox, as well as the button. Places the button to the right of the combobox.
+        combobox_frame = tk.Frame(listbox_frame)
+        combobox_frame.pack(padx=5, pady=5)
 
-        self.slider_frame.pack(padx=5, pady=5)
-        self.feedback_label.pack()
-
-        frame = tk.Frame(self.preference_frame)
-        frame.pack(padx=5, pady=5)
-
+        # List of classes.
         class_list = ['CIS440', 'CIS430']
-        class_combobox = tkinter.ttk.Combobox(frame, values=class_list)
+        class_combobox = tkinter.ttk.Combobox(combobox_frame, values=class_list)
         class_combobox.pack(side=tk.LEFT, padx=5, pady=5)
 
-        add_button = tk.Button(frame, text='Add', command=add_class)
+        add_button = tk.Button(combobox_frame, text='Add', command=add_class)
         add_button.pack(side=tk.LEFT, padx=5, pady=5)
 
-        class_listbox = tk.Listbox(self.preference_frame, width=50)
-        class_listbox.pack(padx=5, pady=5)
-        class_listbox.bind('Double-Button-1', delete_class)
+        class_listbox = tk.Listbox(listbox_frame, width=60)
+        class_listbox.pack()
+        class_listbox.bind('<Double-Button-1>', delete_class)
 
-        self.preference_frame.pack(padx=5, pady=5)
+        # Frame for the buttons.
+        button_frame = tk.Frame(self.preference_frame, background="silver")
+        button_frame.pack(padx=5, pady=5, ipadx=10, ipady=10)
 
-        self.exit_button(self.root, self.root)
+        save_changes_button = tk.Button(button_frame, command=lambda: [], text='Save Changes',font=body_font, width=12)
+        save_changes_button.pack()
 
-    def button_click(self, time, am_pm):
-        am_pm = "AM" if am_pm == 0 else "PM"
-        self.feedback_label.config(text=f'Added {time} {am_pm} to your preferred study hours.')
+        self.exit_button(button_frame, self.root)
+
+    def create_calendar(self):
+        days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+        # Create frames for the days of the week.
+        week_frame = tk.Frame(self.root)
+        week_frame.pack(side=tk.TOP, fill=tk.X)
+
+        for day_name in days_of_week:
+            day_frame = tk.Frame(week_frame)
+            day_frame.pack(side=tk.LEFT)
+
+            # Creates the calendar label for each day.
+            day_label = tk.Label(day_frame, text=day_name, width=10, height=3, relief=tk.GROOVE, background="lightgray", anchor="nw", padx=5, pady=5)
+            day_label.pack(side=tk.TOP)
+
+            # Creates options for each day.
+            hour_var = tk.StringVar()
+            # Options to choose from. Default value is "".
+            formatted_hours = ["", *["{:02d}:00".format(i) for i in range(1, 25)]]
+            hours_menu = tk.OptionMenu(day_frame, hour_var, *formatted_hours)
+
+            # Sets the background color and removes borders from the menu.
+            hours_menu["highlightthickness"] = 0
+            hours_menu.configure(bg="lightgray", borderwidth=0, relief=tk.FLAT)
+
+            hours_menu.place(relx=0.5, rely=0.5, anchor='n')
 
 def main():
     master = tk.Tk()

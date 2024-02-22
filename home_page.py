@@ -1,5 +1,9 @@
 import tkinter as tk
+from datetime import datetime, timedelta
 import mysql.connector
+
+title_font = ("Helvetica", 16)
+body_font = ("Helvetica", 12)
 
 class HomePage:
     def __init__(self, root, db_connection, cursor):
@@ -7,65 +11,76 @@ class HomePage:
         self.db_connection = db_connection
         self.cursor = cursor
 
-        self.frame = tk.Frame(self.root, background="silver")
-        self.frame.pack()
+    def load_main(self):
+        self.menu_frame = tk.Frame(self.root, background="silver")
+        self.menu_frame.pack(side="left", fill="y")
 
-        self.label = tk.Label(self.frame, text="Welcome to the Home Page!", font=("Arial", 16))
-        self.label.pack(pady=20)
+        # The menu icon.
+        menu_icon = tk.Label(self.menu_frame, text="☰", font=body_font, padx=5, pady=5, background="silver", anchor="w")
+        menu_icon.pack(fill="x")
+        menu_icon.bind("<Button-1>", self.toggle_menu)
 
-        # Input field for academic interests
-        self.interests_label = tk.Label(self.frame, text="Academic Interests:", font=("Arial", 12))
-        self.interests_label.pack()
-        self.interests_entry = tk.Entry(self.frame)
-        self.interests_entry.pack(pady=5)
+        self.menu_options = tk.Frame(self.menu_frame, background="silver")
+        self.menu_options.pack_forget()
 
-        # Input field for study reminder time
-        self.reminder_label = tk.Label(self.frame, text="Study Reminder Time (HH:MM):", font=("Arial", 12))
-        self.reminder_label.pack()
-        self.reminder_entry = tk.Entry(self.frame)
-        self.reminder_entry.pack(pady=5)
+        # Menu options.
+        options = ["Option 1", "Option 2", "Option 3"]
+        for option_text in options:
+            option_label = tk.Label(self.menu_options, text=option_text, font=body_font, background="silver")
+            option_label.pack(fill="x")
 
-        # Button to save study reminders
-        self.save_reminders_button = tk.Button(self.frame, text="Save Study Reminders", command=self.save_reminders)
-        self.save_reminders_button.pack(pady=10)
+        self.calendar_frame = tk.Frame(self.root)
 
-        # Calendar widget to display upcoming study sessions/events
-        self.calendar = Calendar(self.frame, selectmode='day', date_pattern='yyyy-mm-dd')
-        self.calendar.pack(pady=10)
+        self.month_label = tk.Label(self.root, background="silver", text="", font=title_font)
+        # The month frame is placed, rather than packed so it is centered and not effected by the menu on the left side.
+        self.month_label.place(x=220, y=10)
 
-    def save_reminders(self):
-        # Get the values entered by the user
-        interests = self.interests_entry.get()
-        reminder_time = self.reminder_entry.get()
+        # The calendar frame is placed, rather than packed so it is centered and not effected by the menu on the left side.
+        self.create_calendar()
+        self.calendar_frame.place(x=100, y=45)
 
-        # Write SQL query to insert study reminders
-        query = "INSERT INTO study_sessions (interests, reminder_time) VALUES (%s, %s)"
-        data = (interests, reminder_time)
+    # Creates and destroys menu on the left side of home screen.
+    def toggle_menu(self, event):
+        if self.menu_options.winfo_ismapped():
+            self.menu_options.pack_forget()
+        else:
+            self.menu_options.pack(anchor="nw")
+            
+    # Creates the calender for the current month.
+    def create_calendar(self):
+        def update_calendar():
+            for widget in self.calendar_frame.winfo_children():
+                widget.destroy()
 
-        # Execute the query
-        self.cursor.execute(query, data)
-        self.db_connection.commit()
+            # Gets the current month and year.
+            now = datetime.now()
+            current_month = now.month
+            current_year = now.year
 
-        print("Study reminders saved successfully.")
+            # Determine the first day of the month and the number of days in the month.
+            first_day_of_month = datetime(current_year, current_month, 1)
+            last_day_of_month = datetime(current_year, current_month + 1, 1) - timedelta(days=1)
+            num_days_in_month = last_day_of_month.day
+            # 0 = Monday, while 6 = Sunday.
+            start_day = first_day_of_month.weekday()
 
-def main():
-    # Establish connection to MySQL server
-    db_connection = mysql.connector.connect(
-        host="107.180.1.16",
-        port="3306",
-        user="spring2024Cteam8",
-        password="spring2024Cteam8",
-        database="spring2024Cteam8"
-    )
-    cursor = db_connection.cursor()
+            # Create labels for the current month and year.
+            self.month_label.config(text=first_day_of_month.strftime("%B %Y"))
 
-    master = tk.Tk()
-    app = HomePage(master, db_connection, cursor)
-    master.mainloop()
+            # Create frames to make the calendar.
+            for _ in range(5):
+                week_frame = tk.Frame(self.calendar_frame, padx=0, pady=0)
+                week_frame.pack(side=tk.TOP, fill=tk.X)
 
-    # Close the database connection when done
-    cursor.close()
-    db_connection.close()
+                for day in range(7):
+                    day_number = (_ * 7) + day - start_day + 1
+                    date = datetime(current_year, current_month, day_number) if 1 <= day_number <= num_days_in_month else None
 
-if __name__ == "__main__":
-    main()
+                    # Create a label for each day.
+                    # Light pink days are outside the current month. Light blue days are weekends. Light gray days are weekdays.
+                    box_color = "lightpink" if date and date.month != current_month else ("lightblue" if date and date.weekday() >= 5 else "lightgray")
+                    day_box = tk.Label(week_frame, text=str(day_number) if date else "", width=6, height=3, relief=tk.GROOVE,
+                                    background=box_color, anchor="nw", padx=5, pady=5)
+                    day_box.pack(side=tk.LEFT, padx=0, pady=0)
+
+        update_calendar()
