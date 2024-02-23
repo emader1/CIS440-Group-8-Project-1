@@ -262,7 +262,7 @@ class LoginWindow(ParentWindow):
 
             # Sets the background color and removes borders from the menu.
             hours_menu["highlightthickness"] = 0
-            hours_menu.configure(bg="lightgray", borderwidth=0, relief=tk.FLAT)
+            hours_menu.configure(bg="lightgray", borderwidth=0, relief="flat")
 
             hours_menu.place(relx=0.5, rely=0.5, anchor='n')
 

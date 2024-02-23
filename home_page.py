@@ -1,9 +1,11 @@
 import tkinter as tk
+import tkinter.ttk
 from datetime import datetime, timedelta
 import mysql.connector
 
 title_font = ("Helvetica", 16)
 body_font = ("Helvetica", 12)
+menu_font = ("Helvetica", 8)
 
 class HomePage:
     def __init__(self, root, db_connection, cursor):
@@ -12,11 +14,31 @@ class HomePage:
         self.cursor = cursor
 
     def load_main(self):
+        def home(event):
+            self.month_label.place(x=220, y=10)
+            self.calendar_frame.place(x=100, y=45)
+            self.join_session_frame.place(x=97, y=340)
+
+        def account_info(event):
+            self.month_label.place_forget()
+            self.calendar_frame.place_forget()
+            self.join_session_frame.place_forget()
+
+        def new_session(event):
+            new_session_frame = tk.Frame(self.root)
+            new_session_frame.pack()
+
+            test_label = tk.Label(new_session_frame, text="test")
+            test_label.pack()
+
+        def logout(event):
+            self.root.destroy()
+
         self.menu_frame = tk.Frame(self.root, background="silver")
         self.menu_frame.pack(side="left", fill="y")
 
         # The menu icon.
-        menu_icon = tk.Label(self.menu_frame, text="☰", font=body_font, padx=5, pady=5, background="silver", anchor="w")
+        menu_icon = tk.Label(self.menu_frame, text="☰", font=menu_font, background="silver", anchor="w")
         menu_icon.pack(fill="x")
         menu_icon.bind("<Button-1>", self.toggle_menu)
 
@@ -24,10 +46,21 @@ class HomePage:
         self.menu_options.pack_forget()
 
         # Menu options.
-        options = ["Option 1", "Option 2", "Option 3"]
-        for option_text in options:
-            option_label = tk.Label(self.menu_options, text=option_text, font=body_font, background="silver")
-            option_label.pack(fill="x")
+        home_label = tk.Label(self.menu_options, text='Home', font=menu_font, background="silver", anchor="w")
+        home_label.pack(fill="x")
+        home_label.bind("<Button-1>", home)
+
+        account_label = tk.Label(self.menu_options, text='Account', font=menu_font, background="silver", anchor="w")
+        account_label.pack(fill="x")
+        account_label.bind("<Button-1>", account_info)
+
+        new_session_label = tk.Label(self.menu_options, text='New Session', font=menu_font, background="silver", anchor="w")
+        new_session_label.pack(fill="x")
+        new_session_label.bind("<Button-1>", new_session)
+
+        logout_label = tk.Label(self.menu_options, text='Logout', font=menu_font, background="silver", anchor="w")
+        logout_label.pack(fill="x")
+        logout_label.bind("<Button-1>", logout)
 
         self.calendar_frame = tk.Frame(self.root)
 
@@ -38,6 +71,40 @@ class HomePage:
         # The calendar frame is placed, rather than packed so it is centered and not effected by the menu on the left side.
         self.create_calendar()
         self.calendar_frame.place(x=100, y=45)
+
+        def join_session():
+            selected_session = session_combobox.get()
+            if selected_session:
+                session_listbox.insert(tk.END, selected_session)
+
+        def delete_session(event):
+            selected_index = session_listbox.curselection()
+            if selected_index:
+                session_listbox.delete(selected_index)
+
+        # Frame that controls the session portion of the window.
+        self.join_session_frame = tk.Frame(self.root, background='silver')
+        self.join_session_frame.place(x=97, y=340)
+
+        # Frame for the listbox entry.
+        listbox_frame = tk.Frame(self.join_session_frame, borderwidth=2, relief='sunken')
+        listbox_frame.pack(padx=5, pady=5, ipadx=10, ipady=10)
+
+        # Frame for the combobox, as well as the button. Places the button to the right of the combobox.
+        combobox_frame = tk.Frame(listbox_frame)
+        combobox_frame.pack(padx=5, pady=5)
+
+        # List of sessions.
+        session_list = ['Session 1', 'Session 2']
+        session_combobox = tkinter.ttk.Combobox(combobox_frame, values=session_list)
+        session_combobox.pack(side=tk.LEFT, padx=5, pady=5)
+
+        add_button = tk.Button(combobox_frame, text='Add', command=join_session)
+        add_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+        session_listbox = tk.Listbox(listbox_frame, width=60)
+        session_listbox.pack()
+        session_listbox.bind('<Double-Button-1>', delete_session)
 
     # Creates and destroys menu on the left side of home screen.
     def toggle_menu(self, event):
