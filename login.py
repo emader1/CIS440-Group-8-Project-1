@@ -83,18 +83,20 @@ class LoginWindow(ParentWindow):
 
     # Uses the mySQL database to validate user's credentials.
     def login(self):
-        query = "SELECT * FROM users WHERE email = %s AND password = %s"
+        query = "SELECT user_type FROM users WHERE email = %s AND password = %s"
         self.cursor.execute(query, (self.email_var.get(), self.password_var.get()))
         user = self.cursor.fetchone()
 
         if user:
+            user_type = user[0]  # Assuming user_type is the first column in the users table
             self.feedback_label.config(text='Login Successful!')
             self.login_frame.pack_forget()
             self.feedback_label.pack_forget()
-            home_page = HomePage(self.root, self.db_connection, self.cursor)
+            home_page = HomePage(self.root, self.db_connection, self.cursor, user_type)
             home_page.load_main()
         else:
             self.feedback_label.config(text='Invalid Email or Password.')
+
 
     # Window allowing users to create a new account.
     def account_window(self):
