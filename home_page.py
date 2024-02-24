@@ -2,7 +2,6 @@ import tkinter as tk
 import tkinter.font as tkfont
 import tkinter.ttk as ttk
 from datetime import datetime, timedelta
-from login import LoginWindow
 
 class HomePage:
     def __init__(self, root, db_connection, cursor, user_type):
@@ -39,6 +38,35 @@ class HomePage:
 
         def logout(event):
             self.root.destroy()
+
+        def admin_view(event):
+        # Function to show admin view
+            self.menu_frame.pack_forget()  # Hide the menu frame
+            self.calendar_frame.pack_forget()  # Hide the calendar frame
+            self.join_session_frame.pack_forget()  # Hide the join session frame
+
+        # Create a new frame to display admin view
+            admin_view_frame = tk.Frame(self.root, background="silver")
+            admin_view_frame.pack()
+
+        # Retrieve all users from the database
+            query = "SELECT * FROM users"
+            self.cursor.execute(query)
+            users = self.cursor.fetchall()
+
+        # Display user information in a listbox
+            user_listbox = tk.Listbox(admin_view_frame, width=100)
+            user_listbox.pack(padx=10, pady=10)
+
+        # Add user information to the listbox
+            for user in users:
+                user_info = f"ID: {user[0]}, Email: {user[1]}, First Name: {user[3]}, Last Name: {user[4]}, Username: {user[5]}, User Type: {user[6]}"
+                user_listbox.insert(tk.END, user_info)
+
+        # Add a button to go back to the main page
+            back_button = tk.Button(admin_view_frame, text="Back to Home", command=self.load_main, font=body_font)
+            back_button.pack(pady=10)
+
 
         self.menu_frame = tk.Frame(self.root, background="silver")
         self.menu_frame.pack(side="left", fill="y")
@@ -108,7 +136,7 @@ class HomePage:
 
         # List of sessions.
         session_list = ['Session 1', 'Session 2']
-        session_combobox = tkinter.ttk.Combobox(combobox_frame, values=session_list)
+        session_combobox = ttk.Combobox(combobox_frame, values=session_list)
         session_combobox.pack(side=tk.LEFT, padx=5, pady=5)
 
         add_button = tk.Button(combobox_frame, text='Add', command=join_session)
