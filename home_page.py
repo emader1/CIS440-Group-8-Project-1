@@ -14,20 +14,12 @@ class HomePage:
         self.cursor = cursor
         self.user_type = user_type
 
-        self.menu_frame = None
-        self.menu_options = None
-        self.calendar_frame = None
-        self.join_session_frame = None
-        self.month_label = None
-
-   
-
         # Configures the title on each of the pages.
         self.title = tk.Label(self.root, background='silver', text="", font=title_font)
         # Frame for the top left menu icon.
         self.menu_frame = tk.Frame(self.root, borderwidth=2, relief='raised')
         # Frame for all the elements inside the left side menu.
-        self.menu_options = tk.Frame(self.menu_frame)
+        self.menu_options = tk.Frame(self.root)  # Initialize menu options frame separately.
         # Frame for the calendar on the home page.
         self.calendar_frame = tk.Frame(self.root)
         # Frame for the calendar that allows users to create a new session.
@@ -43,7 +35,6 @@ class HomePage:
         # Loads the home page.
         def home(event):
             self.session_calendar_frame.place_forget()
-
             self.calendar_frame.place(x=100, y=35)
             self.month_label.place(x=255, y=332)
             self.join_session_frame.place(x=92, y=350)
@@ -72,33 +63,32 @@ class HomePage:
             self.root.destroy()
 
         def admin_view(event):
-        # Function to show admin view
+            # Function to show admin view
             self.menu_frame.pack_forget()  # Hide the menu frame
             self.calendar_frame.pack_forget()  # Hide the calendar frame
             self.join_session_frame.pack_forget()  # Hide the join session frame
 
-        # Create a new frame to display admin view
+            # Create a new frame to display admin view
             admin_view_frame = tk.Frame(self.root, background="silver")
             admin_view_frame.pack()
 
-        # Retrieve all users from the database
+            # Retrieve all users from the database
             query = "SELECT * FROM users"
             self.cursor.execute(query)
             users = self.cursor.fetchall()
 
-        # Display user information in a listbox
+            # Display user information in a listbox
             user_listbox = tk.Listbox(admin_view_frame, width=100)
             user_listbox.pack(padx=10, pady=10)
 
-        # Add user information to the listbox
+            # Add user information to the listbox
             for user in users:
                 user_info = f"ID: {user[0]}, Email: {user[1]}, First Name: {user[3]}, Last Name: {user[4]}, Username: {user[5]}, User Type: {user[6]}"
                 user_listbox.insert(tk.END, user_info)
 
-        # Add a button to go back to the main page
+            # Add a button to go back to the main page
             back_button = tk.Button(admin_view_frame, text="Back to Home", command=self.load_main, font=body_font)
             back_button.pack(pady=10)
-
 
         self.menu_frame = tk.Frame(self.root, background="silver")
         self.menu_frame.pack(side="left", fill="y")
@@ -130,7 +120,8 @@ class HomePage:
 
         # Add admin view option if the user is an admin
         if self.user_type == 'admin':
-            admin_view_label = tk.Label(self.menu_options, text='Admin View', font=menu_font, background="silver", anchor="w")
+            admin_view_label = tk.Label(self.menu_options, text='Admin View', font=menu_font, background="silver",
+                                        anchor="w")
             admin_view_label.pack(fill="x")
             admin_view_label.bind("<Button-1>", admin_view)
 
@@ -197,33 +188,34 @@ class HomePage:
 
     # Creates and destroys menu on the left side of home screen.
     def toggle_menu(self, event):
+        print("Toggle menu called")
         if self.menu_options.winfo_ismapped():
             self.menu_options.pack_forget()
         else:
             self.menu_options.pack(anchor="nw")
-            
+
     # Creates the calender for the current month.
     def create_calendar(self):
         def update_calendar():
             for widget in self.calendar_frame.winfo_children():
                 widget.destroy()
 
-        # Gets the current month and year.
+            # Gets the current month and year.
             now = datetime.now()
             current_month = now.month
             current_year = now.year
 
-        # Determine the first day of the month and the number of days in the month.
+            # Determine the first day of the month and the number of days in the month.
             first_day_of_month = datetime(current_year, current_month, 1)
             last_day_of_month = datetime(current_year, current_month + 1, 1) - timedelta(days=1)
             num_days_in_month = last_day_of_month.day
-        # 0 = Monday, while 6 = Sunday.
+            # 0 = Monday, while 6 = Sunday.
             start_day = first_day_of_month.weekday()
 
-        # Create labels for the current month and year.
+            # Create labels for the current month and year.
             self.month_label.config(text=first_day_of_month.strftime("%B %Y"))
 
-        # Create frames to make the calendar.
+            # Create frames to make the calendar.
             for _ in range(5):
                 week_frame = tk.Frame(self.calendar_frame, padx=0, pady=0)
                 week_frame.pack(side=tk.TOP, fill=tk.X)
@@ -232,15 +224,17 @@ class HomePage:
                     day_number = (_ * 7) + day - start_day + 1
                     date = datetime(current_year, current_month, day_number) if 1 <= day_number <= num_days_in_month else None
 
-                # Create a label for each day.
-                # Light pink days are outside the current month. Light blue days are weekends. Light gray days are weekdays.
-                    box_color = "lightpink" if date and date.month != current_month else ("lightblue" if date and date.weekday() >= 5 else "lightgray")
-                    day_box = tk.Label(week_frame, text=str(day_number) if date else "", width=6, height=3, relief=tk.GROOVE,
-                                    background=box_color, anchor="nw", padx=5, pady=5)
+                    # Create a label for each day.
+                    # Light pink days are outside the current month. Light blue days are weekends. Light gray days are weekdays.
+                    box_color = "lightpink" if date and date.month != current_month else (
+                        "lightblue" if date and date.weekday() >= 5 else "lightgray")
+                    day_box = tk.Label(week_frame, text=str(day_number) if date else "", width=6, height=3,
+                                        relief=tk.GROOVE,
+                                        background=box_color, anchor="nw", padx=5, pady=5)
                     day_box.pack(side="left", padx=0, pady=0)
 
         update_calendar()
-### LOOK AND FIX
+
     def create_new_calendar(self):
         def update_calendar():
             for widget in self.session_calendar_frame.winfo_children():
@@ -265,12 +259,15 @@ class HomePage:
                     day_number = (_ * 7) + day - start_day + 1
                     date = datetime(current_year, current_month, day_number) if 1 <= day_number <= num_days_in_month else None
 
-                    box_color = "lightpink" if date and date.month != current_month else ("lightblue" if date and date.weekday() >= 5 else "lightgray")
-                    day_box = tk.Label(week_frame, text=str(day_number) if date else "", width=6, height=3, relief=tk.GROOVE,
-                                    background=box_color, anchor="nw", padx=5, pady=5, justify=tk.LEFT)  # Set justify to LEFT
+                    box_color = "lightpink" if date and date.month != current_month else (
+                        "lightblue" if date and date.weekday() >= 5 else "lightgray")
+                    day_box = tk.Label(week_frame, text=str(day_number) if date else "", width=6, height=3,
+                                        relief=tk.GROOVE,
+                                        background=box_color, anchor="nw", padx=5, pady=5, justify=tk.LEFT)  # Set justify to LEFT
 
                     day_box.default_color = box_color  # Set the default color
-                    day_box.bind("<Button-1>", lambda event, day_number=day_number: self.toggle_day_selection(event, day_number))
+                    day_box.bind("<Button-1>",
+                                 lambda event, day_number=day_number: self.toggle_day_selection(event, day_number))
 
                     day_box.pack(side="left", padx=0, pady=0)
 
