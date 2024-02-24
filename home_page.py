@@ -3,6 +3,10 @@ import tkinter.font as tkfont
 import tkinter.ttk as ttk
 from datetime import datetime, timedelta
 
+title_font = ("Helvetica", 16)
+body_font = ("Helvetica", 12)
+
+
 class HomePage:
     def __init__(self, root, db_connection, cursor, user_type):
         self.root = root
