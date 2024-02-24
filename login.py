@@ -43,9 +43,16 @@ class LoginWindow(ParentWindow):
         )
         self.cursor = self.db_connection.cursor()
 
-    def load_main(self):
+        # Frame containing login information.
         self.login_frame = tk.Frame(self.root, background="silver")
+        # Frame for creating a new account.
+        self.account_frame = tk.Frame(self.root, background="silver")
+        # Frame for configuring a new user's preferences.
+        self.preference_frame = tk.Frame(self.root, background='silver')
+        # Frame for the weekly calendar in the preference window.
+        self.calendar_frame = tk.Frame(self.preference_frame, background='silver')
 
+    def load_main(self):
         label_frame = tk.Frame(self.login_frame, borderwidth=2, relief='sunken')
         label_frame.pack(padx=5, pady=5, ipadx=10, ipady=10)
 
@@ -88,7 +95,6 @@ class LoginWindow(ParentWindow):
         user = self.cursor.fetchone()
 
         if user:
-            self.feedback_label.config(text='Login Successful!')
             self.login_frame.pack_forget()
             self.feedback_label.pack_forget()
             home_page = HomePage(self.root, self.db_connection, self.cursor)
@@ -98,8 +104,6 @@ class LoginWindow(ParentWindow):
 
     # Window allowing users to create a new account.
     def account_window(self):
-        self.account_frame = tk.Frame(self.root, background="silver")
-
         label_frame = tk.Frame(self.account_frame, borderwidth=2, relief='sunken')
         label_frame.pack(padx=5, pady=5, ipadx=10, ipady=10)
 
@@ -199,12 +203,7 @@ class LoginWindow(ParentWindow):
             if selected_index:
                 class_listbox.delete(selected_index)
 
-        # Frame that controls the entire window.
-        self.preference_frame = tk.Frame(self.root, background='silver')
         self.preference_frame.pack()
-
-        # Frame that places the weekly calendar.
-        self.calendar_frame = tk.Frame(self.preference_frame, background='silver')
         self.calendar_frame.pack(padx=5, pady=5)
 
         # Function that creates a weekly calendar.
@@ -234,7 +233,7 @@ class LoginWindow(ParentWindow):
         button_frame = tk.Frame(self.preference_frame, background="silver")
         button_frame.pack(padx=5, pady=5, ipadx=10, ipady=10)
 
-        save_changes_button = tk.Button(button_frame, command=lambda: [], text='Save Changes',font=body_font, width=12)
+        save_changes_button = tk.Button(button_frame, command=lambda: [self.preference_frame.pack_forget(), self.login_frame.pack()], text='Save Changes',font=body_font, width=12)
         save_changes_button.pack()
 
         self.exit_button(button_frame, self.root)
@@ -243,7 +242,7 @@ class LoginWindow(ParentWindow):
         days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
         # Create frames for the days of the week.
-        week_frame = tk.Frame(self.root)
+        week_frame = tk.Frame(self.calendar_frame)
         week_frame.pack(side=tk.TOP, fill=tk.X)
 
         for day_name in days_of_week:
