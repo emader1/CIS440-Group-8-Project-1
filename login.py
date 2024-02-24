@@ -104,7 +104,6 @@ class LoginWindow(ParentWindow):
         else:
             self.feedback_label.config(text='Invalid Email or Password.')
 
-
     # Window allowing users to create a new account.
     def account_window(self):
         label_frame = tk.Frame(self.account_frame, borderwidth=2, relief='sunken')

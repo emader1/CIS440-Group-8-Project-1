@@ -1,10 +1,11 @@
 import tkinter as tk
-import tkinter.font as tkfont
 import tkinter.ttk as ttk
 from datetime import datetime, timedelta
+import mysql.connector
 
 title_font = ("Helvetica", 16)
 body_font = ("Helvetica", 12)
+menu_font = ("Helvetica", 10)
 
 
 class HomePage:
@@ -19,7 +20,7 @@ class HomePage:
         # Frame for the top left menu icon.
         self.menu_frame = tk.Frame(self.root, borderwidth=2, relief='raised')
         # Frame for all the elements inside the left side menu.
-        self.menu_options = tk.Frame(self.root)  # Initialize menu options frame separately.
+        self.menu_options = tk.Frame(self.menu_frame)
         # Frame for the calendar on the home page.
         self.calendar_frame = tk.Frame(self.root)
         # Frame for the calendar that allows users to create a new session.
@@ -62,40 +63,37 @@ class HomePage:
         def logout(event):
             self.root.destroy()
 
+        # Only appears if user type is admin.
         def admin_view(event):
-            # Function to show admin view
-            self.menu_frame.pack_forget()  # Hide the menu frame
-            self.calendar_frame.pack_forget()  # Hide the calendar frame
-            self.join_session_frame.pack_forget()  # Hide the join session frame
+            self.calendar_frame.place_forget()
+            self.month_label.place_forget()
+            self.join_session_frame.place_forget()
+            button_frame.place_forget()
 
-            # Create a new frame to display admin view
+            # Creates a new frame to display admin view.
             admin_view_frame = tk.Frame(self.root, background="silver")
             admin_view_frame.pack()
 
-            # Retrieve all users from the database
+            # Retrieves all users from the database.
             query = "SELECT * FROM users"
             self.cursor.execute(query)
             users = self.cursor.fetchall()
 
-            # Display user information in a listbox
+            # Displays user information in a listbox.
             user_listbox = tk.Listbox(admin_view_frame, width=100)
             user_listbox.pack(padx=10, pady=10)
 
-            # Add user information to the listbox
             for user in users:
                 user_info = f"ID: {user[0]}, Email: {user[1]}, First Name: {user[3]}, Last Name: {user[4]}, Username: {user[5]}, User Type: {user[6]}"
                 user_listbox.insert(tk.END, user_info)
 
-            # Add a button to go back to the main page
-            back_button = tk.Button(admin_view_frame, text="Back to Home", command=self.load_main, font=body_font)
+            back_button = tk.Button(admin_view_frame, text="Back", command= lambda: [home(event=None), admin_view_frame.pack_forget()], font=body_font)
             back_button.pack(pady=10)
 
-        self.menu_frame = tk.Frame(self.root, background="silver")
         self.menu_frame.pack(side="left", fill="y")
 
         # The menu icon.
-        menu_font = tkfont.Font(size=12)
-        menu_icon = tk.Label(self.menu_frame, text="☰", font=menu_font, background="silver", anchor="w")
+        menu_icon = tk.Label(self.menu_frame, text="☰", font=menu_font, anchor="w")
         menu_icon.pack(fill="x")
         menu_icon.bind("<Button-1>", self.toggle_menu)
 
@@ -118,10 +116,9 @@ class HomePage:
         logout_label.pack(fill="x")
         logout_label.bind("<Button-1>", logout)
 
-        # Add admin view option if the user is an admin
+        # Admin view if the user is an admin.
         if self.user_type == 'admin':
-            admin_view_label = tk.Label(self.menu_options, text='Admin View', font=menu_font, background="silver",
-                                        anchor="w")
+            admin_view_label = tk.Label(self.menu_options, text='Admin View', font=menu_font, anchor="w")
             admin_view_label.pack(fill="x")
             admin_view_label.bind("<Button-1>", admin_view)
 
@@ -188,7 +185,6 @@ class HomePage:
 
     # Creates and destroys menu on the left side of home screen.
     def toggle_menu(self, event):
-        print("Toggle menu called")
         if self.menu_options.winfo_ismapped():
             self.menu_options.pack_forget()
         else:
