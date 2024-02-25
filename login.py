@@ -51,6 +51,7 @@ class LoginWindow(ParentWindow):
         self.preference_frame = tk.Frame(self.root, background='silver')
         # Frame for the weekly calendar in the preference window.
         self.calendar_frame = tk.Frame(self.preference_frame, background='silver')
+        self.class_listbox = None  # Initialize class_listbox
 
     def load_main(self):
         label_frame = tk.Frame(self.login_frame, borderwidth=2, relief='sunken')
@@ -174,11 +175,7 @@ class LoginWindow(ParentWindow):
                     allowed_characters = set("!@#$%^&*()-_=+[]{}|;:'\",.<>/?`~")
                     if len(password) >= 6:
                         if all(char.isalnum() or char in allowed_characters for char in password):
-                            query = "INSERT INTO users (email, password, fname, lname, username) VALUES (%s, %s, %s, %s, %s)"
-                            self.cursor.execute(query, (email, password, fname, lname, username))
-                            self.db_connection.commit()
-                            self.feedback_label.config(text='Success! Account has been created.\nReturn to the home page to login.')
-                            self.preference_window()
+                            self.preference_window(email, password, fname, lname, username)  # Open preference window
                             self.account_frame.pack_forget()
                         else:
                             self.feedback_label.config(text='Password contains invalid characters.')
@@ -194,16 +191,17 @@ class LoginWindow(ParentWindow):
             print(f"Unexpected Error: {e}")
 
     # Window that allows users to enter preferences. Preferences include study times and classes.
-    def preference_window(self):
+            
+    def preference_window(self, email, password, fname, lname, username):
         def add_class():
             selected_item = class_combobox.get()
-            if selected_item and selected_item not in class_listbox.get(0, tk.END):
-                class_listbox.insert(tk.END, selected_item)
+            if selected_item and selected_item not in self.class_listbox.get(0, tk.END):
+                self.class_listbox.insert(tk.END, selected_item)
 
         def delete_class(event):
-            selected_index = class_listbox.curselection()
+            selected_index = self.class_listbox.curselection()
             if selected_index:
-                class_listbox.delete(selected_index)
+                self.class_listbox.delete(selected_index)
 
         self.preference_frame.pack()
         self.calendar_frame.pack(padx=5, pady=5)
@@ -220,25 +218,37 @@ class LoginWindow(ParentWindow):
         combobox_frame.pack(padx=5, pady=5)
 
         # List of classes.
-        class_list = ['CIS440', 'CIS430']
+        class_list = ['Supply Chain', 'CIS', 'Biology','Physics', 'Math']
         class_combobox = tkinter.ttk.Combobox(combobox_frame, values=class_list)
         class_combobox.pack(side=tk.LEFT, padx=5, pady=5)
 
         add_button = tk.Button(combobox_frame, text='Add', command=add_class)
         add_button.pack(side=tk.LEFT, padx=5, pady=5)
 
-        class_listbox = tk.Listbox(listbox_frame, width=60)
-        class_listbox.pack()
-        class_listbox.bind('<Double-Button-1>', delete_class)
+        self.class_listbox = tk.Listbox(listbox_frame, width=60)
+        self.class_listbox.pack()
+        self.class_listbox.bind('<Double-Button-1>', delete_class)
 
         # Frame for the buttons.
         button_frame = tk.Frame(self.preference_frame, background="silver")
         button_frame.pack(padx=5, pady=5, ipadx=10, ipady=10)
 
-        save_changes_button = tk.Button(button_frame, command=lambda: [self.preference_frame.pack_forget(), self.login_frame.pack()], text='Save Changes',font=body_font, width=12)
+        save_changes_button = tk.Button(button_frame, command=lambda: [self.save_preferences(email, password, fname, lname, username), self.preference_frame.pack_forget(), self.login_frame.pack()], text='Save Changes',font=body_font, width=12)
         save_changes_button.pack()
 
         self.exit_button(button_frame, self.root)
+
+    def save_preferences(self, email, password, fname, lname, username):
+        try:
+            preferences = ",".join(self.class_listbox.get(0, tk.END)) if self.class_listbox else ""  # Convert list of preferences to comma-separated string
+
+            query = "INSERT INTO users (email, password, fname, lname, username, preferences) VALUES (%s, %s, %s, %s, %s, %s)"
+            self.cursor.execute(query, (email, password, fname, lname, username, preferences))
+            self.db_connection.commit()
+            self.feedback_label.config(text='Success! Account has been created.\nReturn to the home page to login.')
+        except Exception as e:
+            self.feedback_label.config(text='An unexpected error occurred while saving preferences. Please try again later.')
+            print(f"Unexpected Error: {e}")
 
     def create_calendar(self):
         days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
