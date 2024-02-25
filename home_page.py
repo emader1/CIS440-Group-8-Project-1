@@ -27,17 +27,37 @@ class HomePage:
         self.session_calendar_frame = tk.Frame(self.root)
         # List to store the days selected by the user.
         self.selected_days = []
+        # Frame for events.
+        self.event_frame = tk.Frame(self.root)
         # Label for user to input their new events.
-        self.event_entry = tk.Entry(self.root)
+        self.event_entry = tk.Entry(self.event_frame)
+        # Button to add events to the calendar.
+        self.add_event_button = tk.Button(self.event_frame, text="Add Event", command=lambda: [self.add_event_to_selected(), self.save_session()])
         # Frame that controls the current month and year.
         self.month_label = tk.Label(self.root, background="silver", text="")
         # Frame that controls the session portion of the window.
         self.join_session_frame = tk.Frame(self.root, background='silver')
+        # Creates a new frame to display admin view.
+        self.admin_view_frame = tk.Frame(self.root, background="silver")
+
+        self.menu_frame.pack(side="left", fill="y")
 
     def load_main(self):
         # Loads the home page.
         def home(event):
+            self.title.place_forget()
+            self.calendar_frame.place_forget()
+            self.month_label.place_forget()
+            self.join_session_frame.place_forget()
+            button_frame.place_forget()
+
             self.session_calendar_frame.place_forget()
+            self.event_entry.place_forget()
+
+            self.admin_view_frame.pack_forget()
+
+            self.title.config(text="Home")
+            self.title.place(x=265, y=8)
             self.calendar_frame.place(x=100, y=35)
             self.month_label.place(x=255, y=332)
             self.join_session_frame.place(x=92, y=350)
@@ -45,25 +65,25 @@ class HomePage:
 
         # Loads the account info page.
         def account_info(event):
-            self.calendar_frame.place_forget()
-            self.month_label.place_forget()
-            self.join_session_frame.place_forget()
-            button_frame.place_forget()
+            print('Account info will go in this window when clicked.')
 
         # Allows users to create a new session.
         def new_session(event):
+            self.title.place_forget()
             self.calendar_frame.place_forget()
             self.month_label.place_forget()
             self.join_session_frame.place_forget()
             button_frame.place_forget()
 
+            self.title.config(text='Create A New Study Session')
+            self.title.place(x=155, y=8)
             self.session_calendar_frame.place(x=100, y=35)
             self.create_new_calendar()
             self.month_label.place(x=255, y=332)
-            self.event_entry.place(x=255, y=350)
 
-            add_event_button = tk.Button(self.root, text="Add Event", command=lambda: [self.add_event_to_selected(), self.save_session()])
-            add_event_button.place(x=255, y=400)
+            self.event_entry.pack(padx=5, pady=5)
+            self.add_event_button.pack(padx=5, pady=5)
+            self.event_frame.place(x=230, y=356)
 
         # Allows the user to logout.
         def logout(event):
@@ -71,14 +91,17 @@ class HomePage:
 
         # Only appears if user type is admin.
         def admin_view(event):
+            self.title.place_forget()
             self.calendar_frame.place_forget()
             self.month_label.place_forget()
             self.join_session_frame.place_forget()
             button_frame.place_forget()
 
-            # Creates a new frame to display admin view.
-            admin_view_frame = tk.Frame(self.root, background="silver")
-            admin_view_frame.pack()
+            self.session_calendar_frame.place_forget()
+            self.event_entry.place_forget()
+
+            self.admin_view_frame.pack_forget()
+            self.admin_view_frame.pack(padx=5, pady=5)
 
             # Retrieves all users from the database.
             query = "SELECT * FROM users"
@@ -86,17 +109,15 @@ class HomePage:
             users = self.cursor.fetchall()
 
             # Displays user information in a listbox.
-            user_listbox = tk.Listbox(admin_view_frame, width=100)
-            user_listbox.pack(padx=10, pady=10)
+            user_listbox = tk.Listbox(self.admin_view_frame, width=100)
+            user_listbox.pack()
 
             for user in users:
-                user_info = f"ID: {user[0]}, Email: {user[1]}, First Name: {user[3]}, Last Name: {user[4]}, Username: {user[5]}, User Type: {user[6]}"
+                user_info = f"ID: {user[0]}, Email: {user[1]}, First Name: {user[3]}, Last Name: {user[4]}, Username: {user[5]}, Type: {user[6]}"
                 user_listbox.insert(tk.END, user_info)
 
-            back_button = tk.Button(admin_view_frame, text="Back", command= lambda: [home(event=None), admin_view_frame.pack_forget()], font=body_font)
-            back_button.pack(pady=10)
-
-        self.menu_frame.pack(side="left", fill="y")
+            back_button = tk.Button(self.admin_view_frame, text="Back", command= lambda: [home(event=None), self.admin_view_frame.pack_forget()], font=body_font)
+            back_button.pack(padx=5, pady=5)
 
         # The menu icon.
         menu_icon = tk.Label(self.menu_frame, text="☰", font=menu_font, anchor="w")
@@ -128,11 +149,13 @@ class HomePage:
             admin_view_label.pack(fill="x")
             admin_view_label.bind("<Button-1>", admin_view)
 
-        self.month_label.place(x=220, y=10)
-
-        # The calendar frame is placed, rather than packed so it is centered and not affected by the menu on the left side.
+        # Places all elements on the home page.
+        self.title.config(text="Home")
+        self.title.place(x=265, y=8)
         self.create_calendar()
         self.calendar_frame.place(x=100, y=35)
+        self.month_label.place(x=255, y=332)
+        self.join_session_frame.place(x=92, y=350)
 
         # Adds sessions to the listbox.
         def add_session():
@@ -154,9 +177,6 @@ class HomePage:
         def discard_session():
             print("button to reset the listbox and the values in the combobox.")
 
-        self.month_label.place(x=255, y=332)
-        self.join_session_frame.place(x=92, y=350)
-
         # Frame for the listbox entry.
         listbox_frame = tk.Frame(self.join_session_frame, borderwidth=2, relief='sunken')
         listbox_frame.pack(padx=5, pady=5, ipadx=10, ipady=10)
@@ -166,7 +186,7 @@ class HomePage:
         combobox_frame.pack(padx=5, pady=5)
 
         # List of sessions.
-        session_list = ['Session 1', 'Session 2']
+        session_list = [{'02-24-2024':'CIS 440 Study Group'}]
         session_combobox = ttk.Combobox(combobox_frame, values=session_list)
         session_combobox.pack(side=tk.LEFT, padx=5, pady=5)
 
@@ -306,11 +326,8 @@ class HomePage:
             date = datetime.now().replace(day=day_number)
             date_str = date.strftime("%Y-%m-%d")
 
-        # Execute the query to insert the event information into the database
             self.cursor.execute(insert_query, (date_str, event_name))
             self.db_connection.commit()
-
-        print("Events saved to the database.")
     
     # Resets the list of selected days.
         self.selected_days = []
