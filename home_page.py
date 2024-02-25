@@ -298,21 +298,21 @@ class HomePage:
                 day_box.config(text=updated_text, background=day_box.default_color)
 
     def save_session(self):
-        events_dict = {}
+        insert_query = "INSERT INTO study_sessions (session_date, interests) VALUES (%s, %s)"
+
         event_name = self.event_entry.get()
 
         for day_number in self.selected_days:
             date = datetime.now().replace(day=day_number)
             date_str = date.strftime("%Y-%m-%d")
 
-            if date_str in events_dict:
-                events_dict[date_str].append(event_name)
-            else:
-                events_dict[date_str] = [event_name]
+        # Execute the query to insert the event information into the database
+            self.cursor.execute(insert_query, (date_str, event_name))
+            self.db_connection.commit()
 
-        print("Events Dictionary:", events_dict)
-        
-        # Resets the list of selected days.
+        print("Events saved to the database.")
+    
+    # Resets the list of selected days.
         self.selected_days = []
 
     def find_day_box(self, day_number):
