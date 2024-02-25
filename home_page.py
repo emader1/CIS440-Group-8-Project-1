@@ -20,13 +20,15 @@ class HomePage:
         # Frame for the top left menu icon.
         self.menu_frame = tk.Frame(self.root, borderwidth=2, relief='raised')
         # Frame for all the elements inside the left side menu.
-        self.menu_options = tk.Frame(self.menu_frame)
+        self.menu_options = tk.Frame(self.menu_frame, width=200)
         # Frame for the calendar on the home page.
         self.calendar_frame = tk.Frame(self.root)
         # Frame for the calendar that allows users to create a new session.
         self.session_calendar_frame = tk.Frame(self.root)
         # List to store the days selected by the user.
         self.selected_days = []
+        # Label for user to input their new events.
+        self.event_entry = tk.Entry(self.root)
         # Frame that controls the current month and year.
         self.month_label = tk.Label(self.root, background="silver", text="")
         # Frame that controls the session portion of the window.
@@ -58,6 +60,10 @@ class HomePage:
             self.session_calendar_frame.place(x=100, y=35)
             self.create_new_calendar()
             self.month_label.place(x=255, y=332)
+            self.event_entry.place(x=255, y=350)
+
+            add_event_button = tk.Button(self.root, text="Add Event", command=lambda: [self.add_event_to_selected(), self.save_session()])
+            add_event_button.place(x=255, y=400)
 
         # Allows the user to logout.
         def logout(event):
@@ -122,9 +128,6 @@ class HomePage:
             admin_view_label.pack(fill="x")
             admin_view_label.bind("<Button-1>", admin_view)
 
-        self.calendar_frame = tk.Frame(self.root)
-        self.month_label = tk.Label(self.root, background="silver", text="", font=menu_font)
-        # The month frame is placed, rather than packed so it is centered and not affected by the menu on the left side.
         self.month_label.place(x=220, y=10)
 
         # The calendar frame is placed, rather than packed so it is centered and not affected by the menu on the left side.
@@ -231,6 +234,7 @@ class HomePage:
 
         update_calendar()
 
+    # Creates the calendar on the 'New Session' page. The 2 calendars have different functions.
     def create_new_calendar(self):
         def update_calendar():
             for widget in self.session_calendar_frame.winfo_children():
@@ -259,9 +263,9 @@ class HomePage:
                         "lightblue" if date and date.weekday() >= 5 else "lightgray")
                     day_box = tk.Label(week_frame, text=str(day_number) if date else "", width=6, height=3,
                                         relief=tk.GROOVE,
-                                        background=box_color, anchor="nw", padx=5, pady=5, justify=tk.LEFT)  # Set justify to LEFT
+                                        background=box_color, anchor="nw", padx=5, pady=5, justify=tk.LEFT)
 
-                    day_box.default_color = box_color  # Set the default color
+                    day_box.default_color = box_color
                     day_box.bind("<Button-1>",
                                  lambda event, day_number=day_number: self.toggle_day_selection(event, day_number))
 
@@ -272,7 +276,7 @@ class HomePage:
     def toggle_day_selection(self, event, day_number):
         day_box = event.widget
 
-        # Toggle the day's selection status
+        # Toggles between a day being selected, turning it green, or the default color.
         if day_number in self.selected_days:
             self.selected_days.remove(day_number)
             day_box.config(background=day_box.default_color)
@@ -285,15 +289,30 @@ class HomePage:
         if not event_text or not self.selected_days:
             return
 
-        # Add the event to the selected days
+        # Adds an event to a selected day.
         for day_number in self.selected_days:
             day_box = self.find_day_box(day_number)
             if day_box:
                 current_text = day_box.cget("text")
                 updated_text = f"{day_number}\n{event_text}" if not current_text else f"{current_text}\n{event_text}"
-                day_box.config(text=updated_text, background=day_box.default_color)  # Update the label text
+                day_box.config(text=updated_text, background=day_box.default_color)
 
-        # Reset the list of selected days
+    def save_session(self):
+        events_dict = {}
+        event_name = self.event_entry.get()
+
+        for day_number in self.selected_days:
+            date = datetime.now().replace(day=day_number)
+            date_str = date.strftime("%Y-%m-%d")
+
+            if date_str in events_dict:
+                events_dict[date_str].append(event_name)
+            else:
+                events_dict[date_str] = [event_name]
+
+        print("Events Dictionary:", events_dict)
+        
+        # Resets the list of selected days.
         self.selected_days = []
 
     def find_day_box(self, day_number):
@@ -303,6 +322,5 @@ class HomePage:
                     if int(child_widget.cget("text")) == day_number:
                         return child_widget
                 except ValueError:
-                    # Handle the case where the text is not a valid integer
                     pass
         return None
