@@ -23,6 +23,8 @@ class HomePage:
         self.menu_options = tk.Frame(self.menu_frame, width=200)
         # Frame for the calendar on the home page.
         self.calendar_frame = tk.Frame(self.root)
+        # Variable for the calendar.
+        self.calendar_var = tk.StringVar()
         # Frame for the calendar that allows users to create a new session.
         self.session_calendar_frame = tk.Frame(self.root)
         # List to store the days selected by the user.
@@ -171,7 +173,7 @@ class HomePage:
 
         # Function that saves the sessions and adds them to the calendar.
         def save_session():
-            print("button to save sessions to the calendar.")
+            self.apply_session_to_calendar()
 
         # Function that resets the listbox and combobox with all of the sessions available.
         def discard_session():
@@ -186,8 +188,8 @@ class HomePage:
         combobox_frame.pack(padx=5, pady=5)
 
         # List of sessions.
-        session_list = [{'02-24-2024':'CIS 440 Study Group'}]
-        session_combobox = ttk.Combobox(combobox_frame, values=session_list)
+        self.session_dict = {"Math 101": "2024-02-28", "History 202": "2024-02-15", "Physics 301": "2024-02-10"}
+        session_combobox = ttk.Combobox(combobox_frame, textvariable=self.calendar_var, values=list(self.session_dict.keys()))
         session_combobox.pack(side=tk.LEFT, padx=5, pady=5)
 
         add_button = tk.Button(combobox_frame, text='Add', command=add_session)
@@ -206,35 +208,45 @@ class HomePage:
         discard_button = tk.Button(button_frame, text='Discard', font=body_font, width=12, command=discard_session)
         discard_button.pack(padx=5, pady=5)
 
-    # Creates and destroys menu on the left side of home screen.
-    def toggle_menu(self, event):
-        if self.menu_options.winfo_ismapped():
-            self.menu_options.pack_forget()
-        else:
-            self.menu_options.pack(anchor="nw")
+    # Function to add sessions to home page calendar.
+    def apply_session_to_calendar(self):
+        selected_session = self.calendar_var.get()
+        if selected_session != "Select Study Session":
+            session_date_str = self.session_dict[selected_session]
+            session_date = datetime.strptime(session_date_str, "%Y-%m-%d").date()
 
-    # Creates the calender for the current month.
+            print(f"Selected Session Date: {session_date}")
+
+            for week_frame in self.calendar_frame.winfo_children():
+                if isinstance(week_frame, tk.Frame):
+                    for day_box in week_frame.winfo_children():
+                        if isinstance(day_box, tk.Label):
+                            text = day_box.cget("text")
+                            if text.isdigit():
+                                day_number = int(text)
+                                date = datetime(datetime.now().year, datetime.now().month, day_number).date()
+
+                                if date == session_date:
+                                    current_text = day_box.cget("text")
+                                    updated_text = f"{day_number}\n{selected_session}" if not current_text else f"{current_text}\n{selected_session}"
+                                    day_box.config(text=updated_text, background="lightgreen", anchor="nw", justify=tk.LEFT, wraplength=50)
+                                    day_box.config(anchor="nw")
+
+    # Creates Home Page Calendar.
     def create_calendar(self):
         def update_calendar():
             for widget in self.calendar_frame.winfo_children():
                 widget.destroy()
 
-            # Gets the current month and year.
             now = datetime.now()
             current_month = now.month
             current_year = now.year
 
-            # Determine the first day of the month and the number of days in the month.
             first_day_of_month = datetime(current_year, current_month, 1)
             last_day_of_month = datetime(current_year, current_month + 1, 1) - timedelta(days=1)
             num_days_in_month = last_day_of_month.day
-            # 0 = Monday, while 6 = Sunday.
             start_day = first_day_of_month.weekday()
 
-            # Create labels for the current month and year.
-            self.month_label.config(text=first_day_of_month.strftime("%B %Y"))
-
-            # Create frames to make the calendar.
             for _ in range(5):
                 week_frame = tk.Frame(self.calendar_frame, padx=0, pady=0)
                 week_frame.pack(side=tk.TOP, fill=tk.X)
@@ -243,13 +255,17 @@ class HomePage:
                     day_number = (_ * 7) + day - start_day + 1
                     date = datetime(current_year, current_month, day_number) if 1 <= day_number <= num_days_in_month else None
 
-                    # Create a label for each day.
-                    # Light pink days are outside the current month. Light blue days are weekends. Light gray days are weekdays.
                     box_color = "lightpink" if date and date.month != current_month else (
                         "lightblue" if date and date.weekday() >= 5 else "lightgray")
-                    day_box = tk.Label(week_frame, text=str(day_number) if date else "", width=6, height=3,
-                                        relief=tk.GROOVE,
-                                        background=box_color, anchor="nw", padx=5, pady=5)
+                    
+                    if date and date.month == current_month and date.weekday() < 5:
+                        day_box = tk.Label(week_frame, text=str(day_number) if date else "", width=6, height=3,
+                                           relief=tk.GROOVE,
+                                           background=box_color, anchor="nw", padx=5, pady=5, justify=tk.LEFT, wraplength=50)
+                    else:
+                        day_box = tk.Label(week_frame, text=str(day_number) if date else "", width=6, height=3,
+                                           relief=tk.GROOVE,
+                                           background=box_color, anchor="nw", padx=5, pady=5)
                     day_box.pack(side="left", padx=0, pady=0)
 
         update_calendar()
@@ -329,7 +345,7 @@ class HomePage:
             self.cursor.execute(insert_query, (date_str, event_name))
             self.db_connection.commit()
     
-    # Resets the list of selected days.
+        # Resets the list of selected days.
         self.selected_days = []
 
     def find_day_box(self, day_number):
@@ -341,3 +357,10 @@ class HomePage:
                 except ValueError:
                     pass
         return None
+    
+    # Creates and destroys menu on the left side of home screen.
+    def toggle_menu(self, event):
+        if self.menu_options.winfo_ismapped():
+            self.menu_options.pack_forget()
+        else:
+            self.menu_options.pack(anchor="nw")
