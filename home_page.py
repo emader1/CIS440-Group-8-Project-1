@@ -1,7 +1,6 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 from datetime import datetime, timedelta
-import mysql.connector
 
 title_font = ("Helvetica", 16)
 body_font = ("Helvetica", 12)
@@ -9,11 +8,12 @@ menu_font = ("Helvetica", 10)
 
 
 class HomePage:
-    def __init__(self, root, db_connection, cursor, user_type):
+    def __init__(self, root, db_connection, cursor, email, user_type):
         self.root = root
         self.db_connection = db_connection
         self.cursor = cursor
         self.user_type = user_type
+        self.email = email
 
         # Configures the title on each of the pages.
         self.title = tk.Label(self.root, background='silver', text="", font=title_font)
@@ -34,13 +34,23 @@ class HomePage:
         # Label for user to input their new events.
         self.event_entry = tk.Entry(self.event_frame)
         # Button to add events to the calendar.
-        self.add_event_button = tk.Button(self.event_frame, text="Add Event", command=lambda: [self.add_event_to_selected(), self.save_session()])
+        self.add_event_button = tk.Button(self.event_frame, text="Add Event", command=lambda: [self.add_event_to_selected(), self.save_session_to_database()])
         # Frame that controls the current month and year.
         self.month_label = tk.Label(self.root, background="silver", text="")
         # Frame that controls the session portion of the window.
         self.join_session_frame = tk.Frame(self.root, background='silver')
         # Creates a new frame to display admin view.
         self.admin_view_frame = tk.Frame(self.root, background="silver")
+
+
+        query = f"SELECT sessions, session_date FROM study_sessions WHERE user_email = '{self.email}'"
+        self.cursor.execute(query)
+
+        # Fetch all rows from the result set
+        rows = self.cursor.fetchall()
+
+        # Create a list of dictionaries where each dictionary represents a row
+        self.study_sessions = [{row[0], row[1]} for row in rows]
 
         self.menu_frame.pack(side="left", fill="y")
 
@@ -66,6 +76,8 @@ class HomePage:
             self.month_label.place(x=255, y=332)
             self.join_session_frame.place(x=92, y=350)
             button_frame.place(x=370, y=350)
+
+            print(self.study_sessions)
 
         # Loads the account info page.
         def account_info(event):
@@ -225,7 +237,8 @@ class HomePage:
             session_date_str = self.session_dict[selected_session]
             session_date = datetime.strptime(session_date_str, "%Y-%m-%d").date()
 
-            print(f"Selected Session Date: {session_date}")
+            # This information needs to be saved to the database.
+            print(f"Session Information: {self.email}: {selected_session}, {session_date}")
 
             for week_frame in self.calendar_frame.winfo_children():
                 if isinstance(week_frame, tk.Frame):
@@ -267,9 +280,14 @@ class HomePage:
 
                     box_color = "lightpink" if date and date.month != current_month else (
                         "lightblue" if date and date.weekday() >= 5 else "lightgray")
-                    
+
                     if date and date.month == current_month and date.weekday() < 5:
-                        day_box = tk.Label(week_frame, text=str(day_number) if date else "", width=6, height=3,
+                        # Check if there is a session for this date in the past sessions
+                        self.cursor.execute("SELECT sessions FROM study_sessions WHERE session_date = %s", (f"{current_year}-{current_month:02d}-{day_number:02d}",))
+                        session = self.cursor.fetchone()
+                        session_text = f"{day_number}\n{session[0]}" if session else str(day_number)
+                        
+                        day_box = tk.Label(week_frame, text=session_text, width=6, height=3,
                                            relief=tk.GROOVE,
                                            background=box_color, anchor="nw", padx=5, pady=5, justify=tk.LEFT, wraplength=50)
                     else:
@@ -343,24 +361,21 @@ class HomePage:
                 updated_text = f"{day_number}\n{event_text}" if not current_text else f"{current_text}\n{event_text}"
                 day_box.config(text=updated_text, background=day_box.default_color)
 
-    def save_session(self):
-        insert_query = "INSERT INTO study_sessions (session_date, interests, user_email) VALUES (%s, %s, %s)"
+    def save_session_to_database(self):
+        insert_query = "INSERT INTO study_sessions (sessions, session_date, user_email) VALUES (%s, %s, %s)"
 
         event_name = self.event_entry.get()
 
-    # Fetch user's email
-        query = "SELECT email FROM users WHERE user_type = %s"
-        self.cursor.execute(query, (self.user_type,))
-        user_email = self.cursor.fetchone()[0]
+        print(f"Session Information: {self.email}: {event_name}, {'a'}")
 
         for day_number in self.selected_days:
             date = datetime.now().replace(day=day_number)
             date_str = date.strftime("%Y-%m-%d")
 
-            self.cursor.execute(insert_query, (date_str, event_name, user_email))
+            self.cursor.execute(insert_query, (event_name, date_str, self.email))
             self.db_connection.commit()
     
-    # Resets the list of selected days.
+        # Resets the list of selected days.
         self.selected_days = []
 
     def find_day_box(self, day_number):

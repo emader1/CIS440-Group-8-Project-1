@@ -102,7 +102,7 @@ class LoginWindow(ParentWindow):
             self.feedback_label.config(text='Login Successful!')
             self.login_frame.pack_forget()
             self.feedback_label.pack_forget()
-            home_page = HomePage(self.root, self.db_connection, self.cursor, user_type)
+            home_page = HomePage(self.root, self.db_connection, self.cursor, self.email_var.get(), user_type)
             home_page.load_main()
         else:
             self.feedback_label.config(text='Invalid Email or Password.')
