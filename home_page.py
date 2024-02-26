@@ -334,18 +334,23 @@ class HomePage:
                 day_box.config(text=updated_text, background=day_box.default_color)
 
     def save_session(self):
-        insert_query = "INSERT INTO study_sessions (session_date, interests) VALUES (%s, %s)"
+        insert_query = "INSERT INTO study_sessions (session_date, interests, user_email) VALUES (%s, %s, %s)"
 
         event_name = self.event_entry.get()
+
+    # Fetch user's email
+        query = "SELECT email FROM users WHERE user_type = %s"
+        self.cursor.execute(query, (self.user_type,))
+        user_email = self.cursor.fetchone()[0]
 
         for day_number in self.selected_days:
             date = datetime.now().replace(day=day_number)
             date_str = date.strftime("%Y-%m-%d")
 
-            self.cursor.execute(insert_query, (date_str, event_name))
+            self.cursor.execute(insert_query, (date_str, event_name, user_email))
             self.db_connection.commit()
     
-        # Resets the list of selected days.
+    # Resets the list of selected days.
         self.selected_days = []
 
     def find_day_box(self, day_number):
