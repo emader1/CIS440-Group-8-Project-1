@@ -151,6 +151,8 @@ class LoginWindow(ParentWindow):
         button_frame = tk.Frame(self.account_frame, background="silver")
         button_frame.pack(padx=5, pady=5, ipadx=10, ipady=10)
 
+        self.feedback_label.pack()
+
         create_account_button = tk.Button(button_frame, command=lambda: [self.create_account(email_var.get(), password_var.get(), fname_var.get(), lname_var.get(), username_var.get())], text='Create Account', font=body_font, width=12)
         create_account_button.pack(padx=5, pady=5)
 
@@ -175,7 +177,7 @@ class LoginWindow(ParentWindow):
                     allowed_characters = set("!@#$%^&*()-_=+[]{}|;:'\",.<>/?`~")
                     if len(password) >= 6:
                         if all(char.isalnum() or char in allowed_characters for char in password):
-                            self.preference_window(email, password, fname, lname, username)  # Open preference window
+                            self.preference_window(email, password, fname, lname, username)
                             self.account_frame.pack_forget()
                         else:
                             self.feedback_label.config(text='Password contains invalid characters.')
@@ -191,7 +193,6 @@ class LoginWindow(ParentWindow):
             print(f"Unexpected Error: {e}")
 
     # Window that allows users to enter preferences. Preferences include study times and classes.
-            
     def preference_window(self, email, password, fname, lname, username):
         def add_class():
             selected_item = class_combobox.get()

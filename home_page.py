@@ -177,7 +177,7 @@ class HomePage:
 
         # Function that resets the listbox and combobox with all of the sessions available.
         def discard_session():
-            print("button to reset the listbox and the values in the combobox.")
+            session_listbox.delete(0, tk.END)
 
         # Frame for the listbox entry.
         listbox_frame = tk.Frame(self.join_session_frame, borderwidth=2, relief='sunken')
