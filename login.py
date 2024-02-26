@@ -50,10 +50,12 @@ class LoginWindow(ParentWindow):
         # Frame for configuring a new user's preferences.
         self.preference_frame = tk.Frame(self.root, background='silver')
         # Frame for the weekly calendar in the preference window.
-        self.calendar_frame = tk.Frame(self.preference_frame, background='silver')
-        self.class_listbox = None  # Initialize class_listbox
+        self.calendar_frame = tk.Frame(self.root, background='silver')
 
     def load_main(self):
+        for widget in self.login_frame.winfo_children():
+            widget.destroy()
+
         label_frame = tk.Frame(self.login_frame, borderwidth=2, relief='sunken')
         label_frame.pack(padx=5, pady=5, ipadx=10, ipady=10)
 
@@ -82,7 +84,7 @@ class LoginWindow(ParentWindow):
         login_button = tk.Button(button_frame, command=self.login, text='Login', font=body_font, width=12)
         login_button.pack(padx=5, pady=5)
 
-        create_account_button = tk.Button(button_frame, command=lambda: [self.login_frame.pack_forget(), self.account_window(), self.feedback_label.pack_forget()], text='Create Account', font=body_font, width=12)
+        create_account_button = tk.Button(button_frame, command=lambda: [self.login_frame.pack_forget(), self.account_window()], text='Create Account', font=body_font, width=12)
         create_account_button.pack(padx=5, pady=5)
 
         self.exit_button(button_frame, self.root)
@@ -107,6 +109,9 @@ class LoginWindow(ParentWindow):
 
     # Window allowing users to create a new account.
     def account_window(self):
+        for widget in self.account_frame.winfo_children():
+            widget.destroy()
+
         label_frame = tk.Frame(self.account_frame, borderwidth=2, relief='sunken')
         label_frame.pack(padx=5, pady=5, ipadx=10, ipady=10)
 
@@ -151,12 +156,10 @@ class LoginWindow(ParentWindow):
         button_frame = tk.Frame(self.account_frame, background="silver")
         button_frame.pack(padx=5, pady=5, ipadx=10, ipady=10)
 
-        self.feedback_label.pack()
-
         create_account_button = tk.Button(button_frame, command=lambda: [self.create_account(email_var.get(), password_var.get(), fname_var.get(), lname_var.get(), username_var.get())], text='Create Account', font=body_font, width=12)
         create_account_button.pack(padx=5, pady=5)
 
-        login_window_button = tk.Button(button_frame, command=lambda: [self.login_frame.pack(), self.account_frame.pack_forget(), self.feedback_label.pack_forget()], text='Previous', font=body_font, width=12)
+        login_window_button = tk.Button(button_frame, command=lambda: [self.login_frame.pack(), self.account_frame.pack_forget()], text='Previous', font=body_font, width=12)
         login_window_button.pack(padx=5, pady=5)
 
         self.exit_button(button_frame, self.root)
@@ -194,6 +197,12 @@ class LoginWindow(ParentWindow):
 
     # Window that allows users to enter preferences. Preferences include study times and classes.
     def preference_window(self, email, password, fname, lname, username):
+        for widget in self.preference_frame.winfo_children():
+            widget.destroy()
+
+        for widget in self.calendar_frame.winfo_children():
+            widget.destroy()
+
         def add_class():
             selected_item = class_combobox.get()
             if selected_item and selected_item not in self.class_listbox.get(0, tk.END):
@@ -204,8 +213,8 @@ class LoginWindow(ParentWindow):
             if selected_index:
                 self.class_listbox.delete(selected_index)
 
-        self.preference_frame.pack()
         self.calendar_frame.pack(padx=5, pady=5)
+        self.preference_frame.pack()
 
         # Function that creates a weekly calendar.
         self.create_calendar()
@@ -234,14 +243,14 @@ class LoginWindow(ParentWindow):
         button_frame = tk.Frame(self.preference_frame, background="silver")
         button_frame.pack(padx=5, pady=5, ipadx=10, ipady=10)
 
-        save_changes_button = tk.Button(button_frame, command=lambda: [self.save_preferences(email, password, fname, lname, username), self.preference_frame.pack_forget(), self.login_frame.pack()], text='Save Changes',font=body_font, width=12)
+        save_changes_button = tk.Button(button_frame, command=lambda: [self.save_preferences(email, password, fname, lname, username), self.calendar_frame.pack_forget(), self.preference_frame.pack_forget(), self.login_frame.pack()], text='Save Changes',font=body_font, width=12)
         save_changes_button.pack()
 
         self.exit_button(button_frame, self.root)
 
     def save_preferences(self, email, password, fname, lname, username):
         try:
-            preferences = ",".join(self.class_listbox.get(0, tk.END)) if self.class_listbox else ""  # Convert list of preferences to comma-separated string
+            preferences = ",".join(self.class_listbox.get(0, tk.END)) if self.class_listbox else ""
 
             query = "INSERT INTO users (email, password, fname, lname, username, preferences) VALUES (%s, %s, %s, %s, %s, %s)"
             self.cursor.execute(query, (email, password, fname, lname, username, preferences))

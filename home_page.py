@@ -54,7 +54,9 @@ class HomePage:
             button_frame.place_forget()
 
             self.session_calendar_frame.place_forget()
-            self.event_entry.place_forget()
+            self.event_frame.place_forget()
+
+            self.admin_view_frame.pack_forget()
 
             self.admin_view_frame.pack_forget()
 
@@ -77,6 +79,11 @@ class HomePage:
             self.join_session_frame.place_forget()
             button_frame.place_forget()
 
+            self.session_calendar_frame.place_forget()
+            self.event_frame.place_forget()
+
+            self.admin_view_frame.pack_forget()
+
             self.title.config(text='Create A New Study Session')
             self.title.place(x=155, y=8)
             self.session_calendar_frame.place(x=100, y=35)
@@ -93,6 +100,9 @@ class HomePage:
 
         # Only appears if user type is admin.
         def admin_view(event):
+            for widget in self.admin_view_frame.winfo_children():
+                widget.destroy()
+
             self.title.place_forget()
             self.calendar_frame.place_forget()
             self.month_label.place_forget()
@@ -100,7 +110,7 @@ class HomePage:
             button_frame.place_forget()
 
             self.session_calendar_frame.place_forget()
-            self.event_entry.place_forget()
+            self.event_frame.place_forget()
 
             self.admin_view_frame.pack_forget()
             self.admin_view_frame.pack(padx=5, pady=5)
