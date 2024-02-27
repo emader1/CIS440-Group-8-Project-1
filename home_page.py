@@ -42,18 +42,6 @@ class HomePage:
         # Creates a new frame to display admin view.
         self.admin_view_frame = tk.Frame(self.root, background="silver")
 
-
-        query = f"SELECT sessions, session_date FROM study_sessions WHERE user_email = '{self.email}'"
-        self.cursor.execute(query)
-
-        # Fetch all rows from the result set
-        rows = self.cursor.fetchall()
-
-        # Create a list of dictionaries where each dictionary represents a row
-        self.study_sessions = [{row[0], row[1]} for row in rows]
-
-        self.menu_frame.pack(side="left", fill="y")
-
     def load_main(self):
         # Loads the home page.
         def home(event):
@@ -68,10 +56,18 @@ class HomePage:
 
             self.admin_view_frame.pack_forget()
 
-            self.admin_view_frame.pack_forget()
+            query = f"SELECT sessions, session_date FROM study_sessions WHERE user_email = '{self.email}'"
+            self.cursor.execute(query)
+
+            # Fetch all rows from the result set
+            rows = self.cursor.fetchall()
+
+            # Create a list of dictionaries where each dictionary represents a row
+            self.study_sessions = [{row[0], row[1]} for row in rows]
 
             self.title.config(text="Home")
             self.title.place(x=265, y=8)
+            self.create_calendar()
             self.calendar_frame.place(x=100, y=35)
             self.month_label.place(x=255, y=332)
             self.join_session_frame.place(x=92, y=350)
@@ -143,6 +139,17 @@ class HomePage:
             back_button = tk.Button(self.admin_view_frame, text="Back", command= lambda: [home(event=None), self.admin_view_frame.pack_forget()], font=body_font)
             back_button.pack(padx=5, pady=5)
 
+        query = f"SELECT sessions, session_date FROM study_sessions WHERE user_email = '{self.email}'"
+        self.cursor.execute(query)
+
+        # Fetch all rows from the result set
+        rows = self.cursor.fetchall()
+
+        # Create a list of dictionaries where each dictionary represents a row
+        self.study_sessions = [{row[0], row[1]} for row in rows]
+
+        self.menu_frame.pack(side="left", fill="y")
+
         # The menu icon.
         menu_icon = tk.Label(self.menu_frame, text="☰", font=menu_font, anchor="w")
         menu_icon.pack(fill="x")
@@ -209,8 +216,13 @@ class HomePage:
         combobox_frame = tk.Frame(listbox_frame)
         combobox_frame.pack(padx=5, pady=5)
 
-        # List of sessions.
-        self.session_dict = {"Math 101": "2024-02-28", "History 202": "2024-02-15", "Physics 301": "2024-02-10"}
+        # Takes sessions from database.
+        query = "SELECT sessions, session_date FROM study_sessions"
+        self.cursor.execute(query)
+        sessions_from_db = self.cursor.fetchall()
+
+        # Creates a dictionary from the fetched sessions.
+        self.session_dict = {f"{session[0]} - {session[1].strftime('%Y-%m-%d')}": session[1] for session in sessions_from_db}
         session_combobox = ttk.Combobox(combobox_frame, textvariable=self.calendar_var, values=list(self.session_dict.keys()))
         session_combobox.pack(side=tk.LEFT, padx=5, pady=5)
 
@@ -233,12 +245,13 @@ class HomePage:
     # Function to add sessions to home page calendar.
     def apply_session_to_calendar(self):
         selected_session = self.calendar_var.get()
-        if selected_session != "Select Study Session":
-            session_date_str = self.session_dict[selected_session]
-            session_date = datetime.strptime(session_date_str, "%Y-%m-%d").date()
+        if selected_session:
+            session_date = self.session_dict[selected_session]
 
             # This information needs to be saved to the database.
-            print(f"Session Information: {self.email}: {selected_session}, {session_date}")
+            insert_query = "INSERT INTO study_sessions (sessions, session_date, user_email) VALUES (%s, %s, %s)"
+            self.cursor.execute(insert_query, (selected_session, str(session_date), self.email))
+            self.db_connection.commit()
 
             for week_frame in self.calendar_frame.winfo_children():
                 if isinstance(week_frame, tk.Frame):
@@ -254,6 +267,7 @@ class HomePage:
                                     updated_text = f"{day_number}\n{selected_session}" if not current_text else f"{current_text}\n{selected_session}"
                                     day_box.config(text=updated_text, background="lightgreen", anchor="nw", justify=tk.LEFT, wraplength=50)
                                     day_box.config(anchor="nw")
+
 
     # Creates Home Page Calendar.
     def create_calendar(self):
@@ -283,7 +297,7 @@ class HomePage:
 
                     if date and date.month == current_month and date.weekday() < 5:
                         # Check if there is a session for this date in the past sessions
-                        self.cursor.execute("SELECT sessions FROM study_sessions WHERE session_date = %s", (f"{current_year}-{current_month:02d}-{day_number:02d}",))
+                        self.cursor.execute("SELECT sessions FROM study_sessions WHERE session_date = %s AND user_email = %s", (f"{current_year}-{current_month:02d}-{day_number:02d}", self.email))
                         session = self.cursor.fetchone()
                         session_text = f"{day_number}\n{session[0]}" if session else str(day_number)
                         
