@@ -250,10 +250,11 @@ class LoginWindow(ParentWindow):
 
     def save_preferences(self, email, password, fname, lname, username):
         try:
+            days = ','.join([day_name for day_name, selected in self.selected_days.items() if selected])
             preferences = ",".join(self.class_listbox.get(0, tk.END)) if self.class_listbox else ""
 
-            query = "INSERT INTO users (email, password, fname, lname, username, preferences) VALUES (%s, %s, %s, %s, %s, %s)"
-            self.cursor.execute(query, (email, password, fname, lname, username, preferences))
+            query = "INSERT INTO users (email, password, fname, lname, username, preferences, days) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            self.cursor.execute(query, (email, password, fname, lname, username, preferences, days))
             self.db_connection.commit()
             self.feedback_label.config(text='Success! Account has been created.\nReturn to the home page to login.')
         except Exception as e:
@@ -267,6 +268,20 @@ class LoginWindow(ParentWindow):
         week_frame = tk.Frame(self.calendar_frame)
         week_frame.pack(side=tk.TOP, fill=tk.X)
 
+        # Dictionary to store the selected state of each day
+        self.selected_days = {day_name: False for day_name in days_of_week}
+
+        def toggle_day_selection(day_name):
+            self.selected_days[day_name] = not self.selected_days[day_name]
+            update_day_colors()
+
+        def update_day_colors():
+            for day_name, selected in self.selected_days.items():
+                color = "lightgreen" if selected else "lightgray"
+                day_labels[day_name].config(background=color)
+
+        day_labels = {}
+
         for day_name in days_of_week:
             day_frame = tk.Frame(week_frame)
             day_frame.pack(side=tk.LEFT)
@@ -274,18 +289,9 @@ class LoginWindow(ParentWindow):
             # Creates the calendar label for each day.
             day_label = tk.Label(day_frame, text=day_name, width=10, height=3, relief=tk.GROOVE, background="lightgray", anchor="nw", padx=5, pady=5)
             day_label.pack(side=tk.TOP)
+            day_label.bind("<Button-1>", lambda event, day_name=day_name: toggle_day_selection(day_name))
 
-            # Creates options for each day.
-            hour_var = tk.StringVar()
-            # Options to choose from. Default value is "".
-            formatted_hours = ["", *["{:02d}:00".format(i) for i in range(1, 25)]]
-            hours_menu = tk.OptionMenu(day_frame, hour_var, *formatted_hours)
-
-            # Sets the background color and removes borders from the menu.
-            hours_menu["highlightthickness"] = 0
-            hours_menu.configure(bg="lightgray", borderwidth=0, relief="flat")
-
-            hours_menu.place(relx=0.5, rely=0.5, anchor='n')
+            day_labels[day_name] = day_label
 
 def main():
     master = tk.Tk()

@@ -33,8 +33,8 @@ class HomePage:
         self.event_frame = tk.Frame(self.root)
         # Label for user to input their new events.
         self.event_entry = tk.Entry(self.event_frame)
-        # Button to add events to the calendar.
-        self.add_event_button = tk.Button(self.event_frame, text="Add Event", command=lambda: [self.add_event_to_selected(), self.save_session_to_database()])
+        # Button to add sessions to the calendar.
+        self.add_event_button = tk.Button(self.event_frame, text="Add Session", command=lambda: [self.add_event_to_selected(), self.save_session_to_database()])
         # Frame that controls the current month and year.
         self.month_label = tk.Label(self.root, background="silver", text="")
         # Frame that controls the session portion of the window.
@@ -61,6 +61,12 @@ class HomePage:
 
             # Fetch all rows from the result set
             rows = self.cursor.fetchall()
+
+            # Takes sessions from database.
+            query = "SELECT sessions, session_date FROM study_sessions"
+            self.cursor.execute(query)
+            sessions_from_db = self.cursor.fetchall()
+
 
             # Create a list of dictionaries where each dictionary represents a row
             self.study_sessions = [{row[0], row[1]} for row in rows]
@@ -139,7 +145,7 @@ class HomePage:
             back_button = tk.Button(self.admin_view_frame, text="Back", command= lambda: [home(event=None), self.admin_view_frame.pack_forget()], font=body_font)
             back_button.pack(padx=5, pady=5)
 
-        query = f"SELECT sessions, session_date FROM study_sessions WHERE user_email = '{self.email}'"
+        query = "SELECT sessions, session_date FROM study_sessions"
         self.cursor.execute(query)
 
         # Fetch all rows from the result set
@@ -249,9 +255,14 @@ class HomePage:
             session_date = self.session_dict[selected_session]
 
             # This information needs to be saved to the database.
-            insert_query = "INSERT INTO study_sessions (sessions, session_date, user_email) VALUES (%s, %s, %s)"
-            self.cursor.execute(insert_query, (selected_session, str(session_date), self.email))
+            update_query = f"UPDATE users SET user_sessions = %s WHERE email = '{self.email}'"
+            self.cursor.execute(update_query, (session_date,))
             self.db_connection.commit()
+
+            # This information is grabbed from the database.
+            query = f"SELECT user_sessions FROM users WHERE email = '{self.email}'"
+            self.cursor.execute(query)
+            current_user_sessions = self.cursor.fetchone()[0]
 
             for week_frame in self.calendar_frame.winfo_children():
                 if isinstance(week_frame, tk.Frame):
@@ -267,7 +278,6 @@ class HomePage:
                                     updated_text = f"{day_number}\n{selected_session}" if not current_text else f"{current_text}\n{selected_session}"
                                     day_box.config(text=updated_text, background="lightgreen", anchor="nw", justify=tk.LEFT, wraplength=50)
                                     day_box.config(anchor="nw")
-
 
     # Creates Home Page Calendar.
     def create_calendar(self):
@@ -296,7 +306,6 @@ class HomePage:
                         "lightblue" if date and date.weekday() >= 5 else "lightgray")
 
                     if date and date.month == current_month and date.weekday() < 5:
-                        # Check if there is a session for this date in the past sessions
                         self.cursor.execute("SELECT sessions FROM study_sessions WHERE session_date = %s AND user_email = %s", (f"{current_year}-{current_month:02d}-{day_number:02d}", self.email))
                         session = self.cursor.fetchone()
                         session_text = f"{day_number}\n{session[0]}" if session else str(day_number)
@@ -376,21 +385,32 @@ class HomePage:
                 day_box.config(text=updated_text, background=day_box.default_color)
 
     def save_session_to_database(self):
-        insert_query = "INSERT INTO study_sessions (sessions, session_date, user_email) VALUES (%s, %s, %s)"
-
         event_name = self.event_entry.get()
 
-        print(f"Session Information: {self.email}: {event_name}, {'a'}")
+        # Fetch existing user_sessions
+        query = f"SELECT user_sessions FROM users WHERE email = '{self.email}'"
+        self.cursor.execute(query)
+        current_user_sessions = self.cursor.fetchone()[0]
 
         for day_number in self.selected_days:
             date = datetime.now().replace(day=day_number)
             date_str = date.strftime("%Y-%m-%d")
 
+            insert_query = "INSERT INTO study_sessions (sessions, session_date, user_email) VALUES (%s, %s, %s)"
             self.cursor.execute(insert_query, (event_name, date_str, self.email))
             self.db_connection.commit()
-    
+
+            # Append the new session to existing user_sessions
+            updated_user_sessions = f"{current_user_sessions}, {event_name}" if current_user_sessions else event_name
+
+            # Update the user_sessions field
+            update_query = f"UPDATE users SET user_sessions = %s WHERE email = '{self.email}'"
+            self.cursor.execute(update_query, (updated_user_sessions.strip(),))
+            self.db_connection.commit()
+            
         # Resets the list of selected days.
         self.selected_days = []
+
 
     def find_day_box(self, day_number):
         for widget in self.session_calendar_frame.winfo_children():
