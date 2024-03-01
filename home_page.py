@@ -15,6 +15,7 @@ class HomePage:
         self.user_type = user_type
         self.email = email
 
+        self.account_frame = tk.Frame(self.root, background="silver")
         # Configures the title on each of the pages.
         self.title = tk.Label(self.root, background='silver', text="", font=title_font)
         # Frame for the top left menu icon.
@@ -54,6 +55,8 @@ class HomePage:
             self.session_calendar_frame.place_forget()
             self.event_frame.place_forget()
 
+            self.account_frame.place_forget()
+
             self.admin_view_frame.pack_forget()
 
             query = f"SELECT sessions, session_date FROM study_sessions WHERE user_email = '{self.email}'"
@@ -79,11 +82,60 @@ class HomePage:
             self.join_session_frame.place(x=92, y=350)
             button_frame.place(x=370, y=350)
 
-            print(self.study_sessions)
-
         # Loads the account info page.
         def account_info(event):
-            print('Account info will go in this window when clicked.')
+            self.title.place_forget()
+            self.calendar_frame.place_forget()
+            self.month_label.place_forget()
+            self.join_session_frame.place_forget()
+            button_frame.place_forget()
+
+            self.session_calendar_frame.place_forget()
+            self.event_frame.place_forget()
+
+            self.account_frame.place_forget()
+
+            self.admin_view_frame.pack_forget()
+            
+            self.title.config(text='Account Info')
+
+            try:
+                query = "SELECT fname, lname, username, email, preferences, days FROM users WHERE email = %s"
+                self.cursor.execute(query, (self.email,))
+                row = self.cursor.fetchone()
+
+                if row:
+                    fname, lname, username, email, preferences, days = row
+
+                    # Split preferences and days into lists
+                    preferences_list = preferences.split(",") if preferences else []
+                    days_list = days.split(",") if days else []
+
+                    # Now you have individual variables and lists for the user's data
+                    print("First Name:", fname)
+                    print("Last Name:", lname)
+                    print("Username:", username)
+                    print("Email:", email)
+                    print("Preferences:", preferences_list)
+                    print("Days:", days_list)
+
+                    name_label = tk.Label(self.account_frame, text=f"Hello, {fname} {lname}.", font=title_font)
+                    name_label.pack(padx=5, pady=5)
+                    username_label = tk.Label(self.account_frame, text=f"Username: {username}", font=body_font)
+                    username_label.pack(padx=5, pady=5)
+                    email_label = tk.Label(self.account_frame, text=f"Email: {email}", font=body_font)
+                    email_label.pack(padx=5, pady=5)
+                    preferences_day_label = tk.Label(self.account_frame, text=f"Preferences: {preferences_list}\nDays: {days_list}")
+                    preferences_day_label.pack(padx=5, pady=5)
+
+                    self.account_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+
+                else:
+                    print(f"No user found with email: {self.email}")
+
+            except Exception as e:
+                print(f"Unexpected Error: {e}")
 
         # Allows users to create a new session.
         def new_session(event):
@@ -95,6 +147,8 @@ class HomePage:
 
             self.session_calendar_frame.place_forget()
             self.event_frame.place_forget()
+
+            self.account_frame.place_forget()
 
             self.admin_view_frame.pack_forget()
 
